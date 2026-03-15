@@ -3,11 +3,11 @@
 </template>
 
 <script setup>
-// 使用 Vue Router 来管理页面
+// Vue Router manages page navigation
 </script>
 
 <style>
-/* 全局样式重置 */
+/* Global style reset */
 * {
   margin: 0;
   padding: 0;
@@ -15,32 +15,36 @@
 }
 
 #app {
-  font-family: 'JetBrains Mono', 'Space Grotesk', 'Noto Sans SC', monospace;
+  font-family: 'JetBrains Mono', 'Space Grotesk', 'Noto Sans Hebrew', system-ui, monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #000000;
-  background-color: #ffffff;
+  color: #FAFAFA;
+  background-color: #000000;
 }
 
-/* 滚动条样式 */
+/* RTL support via CSS logical properties */
+[dir="rtl"] .text-left { text-align: start; }
+[dir="rtl"] .text-right { text-align: end; }
+
+/* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #111111;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #000000;
-}
-
-::-webkit-scrollbar-thumb:hover {
   background: #333333;
 }
 
-/* 全局按钮样式 */
+::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+/* Global button styles */
 button {
   font-family: inherit;
 }

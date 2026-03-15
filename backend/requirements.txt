@@ -1,5 +1,5 @@
 # ===========================================
-# MiroFish Backend Dependencies
+# AgenikPredict Backend Dependencies
 # ===========================================
 # Python 3.11+ required
 # Install: pip install -r requirements.txt
@@ -26,6 +26,9 @@ PyMuPDF>=1.24.0
 # 编码检测（支持非UTF-8编码的文本文件）
 charset-normalizer>=3.0.0
 chardet>=5.0.0
+# Web scraping for URL extraction
+requests>=2.31.0
+beautifulsoup4>=4.12.0
 
 # ============= 工具库 =============
 # 环境变量加载

@@ -1,9 +1,9 @@
 services:
-  mirofish:
-    image: ghcr.io/666ghj/mirofish:latest
-    # 加速镜像（如拉取缓慢可替换上方地址）
-    # image: ghcr.nju.edu.cn/666ghj/mirofish:latest
-    container_name: mirofish
+  agenikpredict:
+    image: ghcr.io/666ghj/agenikpredict:latest
+    # Mirror image (use if primary is slow)
+    # image: ghcr.nju.edu.cn/666ghj/agenikpredict:latest
+    container_name: agenikpredict
     env_file:
       - .env
     ports:

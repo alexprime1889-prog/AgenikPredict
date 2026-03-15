@@ -3,19 +3,19 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH</div>
+        <div class="brand" @click="router.push('/')">{{ $t('brand') }}</div>
       </div>
-      
+
       <div class="header-center">
         <div class="view-switcher">
-          <button 
-            v-for="mode in ['graph', 'split', 'workbench']" 
+          <button
+            v-for="mode in ['graph', 'split', 'workbench']"
             :key="mode"
             class="switch-btn"
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: '图谱', split: '双栏', workbench: '工作台' }[mode] }}
+            {{ $t('view.' + mode) }}
           </button>
         </div>
       </div>
@@ -30,6 +30,7 @@
           <span class="dot"></span>
           {{ statusText }}
         </span>
+        <LanguageSwitcher />
       </div>
     </header>
 
@@ -37,7 +38,7 @@
     <main class="content-area">
       <!-- Left Panel: Graph -->
       <div class="panel-wrapper left" :style="leftPanelStyle">
-        <GraphPanel 
+        <GraphPanel
           :graphData="graphData"
           :loading="graphLoading"
           :currentPhase="currentPhase"
@@ -48,8 +49,8 @@
 
       <!-- Right Panel: Step Components -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
-        <!-- Step 1: 图谱构建 -->
-        <Step1GraphBuild 
+        <!-- Step 1: Graph Construction -->
+        <Step1GraphBuild
           v-if="currentStep === 1"
           :currentPhase="currentPhase"
           :projectData="projectData"
@@ -59,7 +60,7 @@
           :systemLogs="systemLogs"
           @next-step="handleNextStep"
         />
-        <!-- Step 2: 环境搭建 -->
+        <!-- Step 2: Environment Setup -->
         <Step2EnvSetup
           v-else-if="currentStep === 2"
           :projectData="projectData"
@@ -77,12 +78,15 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step1GraphBuild from '../components/Step1GraphBuild.vue'
 import Step2EnvSetup from '../components/Step2EnvSetup.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import { generateOntology, getProject, buildGraph, getTaskStatus, getGraphData } from '../api/graph'
 import { getPendingUpload, clearPendingUpload } from '../store/pendingUpload'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -90,8 +94,14 @@ const router = useRouter()
 const viewMode = ref('split') // graph | split | workbench
 
 // Step State
-const currentStep = ref(1) // 1: 图谱构建, 2: 环境搭建, 3: 开始模拟, 4: 报告生成, 5: 深度互动
-const stepNames = ['图谱构建', '环境搭建', '开始模拟', '报告生成', '深度互动']
+const currentStep = ref(1)
+const stepNames = computed(() => [
+  t('steps.graphBuild'),
+  t('steps.envSetup'),
+  t('steps.simulation'),
+  t('steps.report'),
+  t('steps.interaction'),
+])
 
 // Data State
 const currentProjectId = ref(route.params.projectId)
@@ -159,11 +169,11 @@ const toggleMaximize = (target) => {
 const handleNextStep = (params = {}) => {
   if (currentStep.value < 5) {
     currentStep.value++
-    addLog(`进入 Step ${currentStep.value}: ${stepNames[currentStep.value - 1]}`)
-    
-    // 如果是从 Step 2 进入 Step 3，记录模拟轮数配置
+    addLog(`Entering Step ${currentStep.value}: ${stepNames.value[currentStep.value - 1]}`)
+
+    // If moving from Step 2 to Step 3, log custom rounds config
     if (currentStep.value === 3 && params.maxRounds) {
-      addLog(`自定义模拟轮数: ${params.maxRounds} 轮`)
+      addLog(`Custom simulation rounds: ${params.maxRounds}`)
     }
   }
 }
@@ -171,7 +181,7 @@ const handleNextStep = (params = {}) => {
 const handleGoBack = () => {
   if (currentStep.value > 1) {
     currentStep.value--
-    addLog(`返回 Step ${currentStep.value}: ${stepNames[currentStep.value - 1]}`)
+    addLog(`Returning to Step ${currentStep.value}: ${stepNames.value[currentStep.value - 1]}`)
   }
 }
 
@@ -193,23 +203,23 @@ const handleNewProject = async () => {
     addLog('Error: No pending files found for new project.')
     return
   }
-  
+
   try {
     loading.value = true
     currentPhase.value = 0
     ontologyProgress.value = { message: 'Uploading and analyzing docs...' }
     addLog('Starting ontology generation: Uploading files...')
-    
+
     const formData = new FormData()
     pending.files.forEach(f => formData.append('files', f))
     formData.append('simulation_requirement', pending.simulationRequirement)
-    
+
     const res = await generateOntology(formData)
     if (res.success) {
       clearPendingUpload()
       currentProjectId.value = res.data.project_id
       projectData.value = res.data
-      
+
       router.replace({ name: 'Process', params: { projectId: res.data.project_id } })
       ontologyProgress.value = null
       addLog(`Ontology generated successfully for project ${res.data.project_id}`)
@@ -235,7 +245,7 @@ const loadProject = async () => {
       projectData.value = res.data
       updatePhaseByStatus(res.data.status)
       addLog(`Project loaded. Status: ${res.data.status}`)
-      
+
       if (res.data.status === 'ontology_generated' && !res.data.graph_id) {
         await startBuildGraph()
       } else if (res.data.status === 'graph_building' && res.data.graph_build_task_id) {
@@ -273,7 +283,7 @@ const startBuildGraph = async () => {
     currentPhase.value = 1
     buildProgress.value = { progress: 0, message: 'Starting build...' }
     addLog('Initiating graph build...')
-    
+
     const res = await buildGraph({ project_id: currentProjectId.value })
     if (res.success) {
       addLog(`Graph build task started. Task ID: ${res.data.task_id}`)
@@ -323,20 +333,20 @@ const pollTaskStatus = async (taskId) => {
     const res = await getTaskStatus(taskId)
     if (res.success) {
       const task = res.data
-      
+
       // Log progress message if it changed
       if (task.message && task.message !== buildProgress.value?.message) {
         addLog(task.message)
       }
-      
+
       buildProgress.value = { progress: task.progress || 0, message: task.message }
-      
+
       if (task.status === 'completed') {
         addLog('Graph build task completed.')
         stopPolling()
         stopGraphPolling() // Stop polling, do final load
         currentPhase.value = 2
-        
+
         // Final load
         const projRes = await getProject(currentProjectId.value)
         if (projRes.success && projRes.data.graph_id) {
@@ -409,20 +419,21 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #FFF;
+  background: #000000;
   overflow: hidden;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Noto Sans Hebrew', system-ui, sans-serif;
+  color: #E0E0E0;
 }
 
 /* Header */
 .app-header {
   height: 60px;
-  border-bottom: 1px solid #EAEAEA;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: #FFF;
+  background: #000000;
   z-index: 100;
   position: relative;
 }
@@ -439,11 +450,12 @@ onUnmounted(() => {
   font-size: 18px;
   letter-spacing: 1px;
   cursor: pointer;
+  color: #FFFFFF;
 }
 
 .view-switcher {
   display: flex;
-  background: #F5F5F5;
+  background: rgba(255, 255, 255, 0.05);
   padding: 4px;
   border-radius: 6px;
   gap: 4px;
@@ -455,16 +467,16 @@ onUnmounted(() => {
   padding: 6px 16px;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: #999999;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .switch-btn.active {
-  background: #FFF;
-  color: #000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  box-shadow: none;
 }
 
 .status-indicator {
@@ -472,7 +484,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #666;
+  color: #999999;
   font-weight: 500;
 }
 
@@ -492,25 +504,25 @@ onUnmounted(() => {
 .step-num {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: #999;
+  color: #999999;
 }
 
 .step-name {
   font-weight: 700;
-  color: #000;
+  color: #FFFFFF;
 }
 
 .step-divider {
   width: 1px;
   height: 14px;
-  background-color: #E0E0E0;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #CCC;
+  background: #666;
 }
 
 .status-indicator.processing .dot { background: #FF5722; animation: pulse 1s infinite; }
@@ -535,6 +547,6 @@ onUnmounted(() => {
 }
 
 .panel-wrapper.left {
-  border-right: 1px solid #EAEAEA;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 </style>

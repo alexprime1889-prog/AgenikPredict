@@ -1,134 +1,133 @@
 <template>
   <div class="home-container">
-    <!-- 顶部导航栏 -->
+    <ParticlesBackground class="particles-bg" :quantity="50" color="#ffffff" :size="0.05" :staticity="40" :ease="70" />
+
+    <!-- Top navigation bar -->
     <nav class="navbar">
-      <div class="nav-brand">MIROFISH</div>
+      <div class="nav-brand">{{ $t('brand') }}</div>
       <div class="nav-links">
-        <a href="https://github.com/666ghj/MiroFish" target="_blank" class="github-link">
-          访问我们的Github主页 <span class="arrow">↗</span>
-        </a>
+        <LanguageSwitcher />
       </div>
     </nav>
 
     <div class="main-content">
-      <!-- 上半部分：Hero 区域 -->
+      <!-- Upper section: Hero area -->
       <section class="hero-section">
         <div class="hero-left">
-          <div class="tag-row">
-            <span class="orange-tag">简洁通用的群体智能引擎</span>
-            <span class="version-text">/ v0.1-预览版</span>
+          <div class="tag-row animate-fade-in" style="--animation-delay: 0ms">
+            <span class="orange-tag animate-shimmer">{{ $t('hero.tagline') }}</span>
           </div>
-          
-          <h1 class="main-title">
-            上传任意报告<br>
-            <span class="gradient-text">即刻推演未来</span>
+
+          <h1 class="main-title animate-fade-in" style="--animation-delay: 200ms">
+            {{ $t('hero.title.line1') }}<br>
+            <span class="gradient-text">{{ $t('hero.title.line2') }}</span>
           </h1>
-          
-          <div class="hero-desc">
-            <p>
-              即使只有一段文字，<span class="highlight-bold">MiroFish</span> 也能基于其中的现实种子，全自动生成与之对应的至多<span class="highlight-orange">百万级Agent</span>构成的平行世界。通过上帝视角注入变量，在复杂的群体交互中寻找动态环境下的<span class="highlight-code">“局部最优解”</span>
-            </p>
+
+          <div class="hero-desc animate-fade-in" style="--animation-delay: 400ms">
+            <p v-html="$t('hero.desc', { brand: 'AgenikPredict', agentCount: $t('hero.agentCount'), optimalSolution: $t('hero.optimalSolution') })"></p>
             <p class="slogan-text">
-              让未来在 Agent 群中预演，让决策在百战后胜出<span class="blinking-cursor">_</span>
+              {{ $t('hero.slogan') }}<span class="blinking-cursor">_</span>
             </p>
           </div>
-           
-          <div class="decoration-square"></div>
+
+          <div class="decoration-square animate-fade-in" style="--animation-delay: 600ms"></div>
         </div>
-        
+
         <div class="hero-right">
-          <!-- Logo 区域 -->
+          <!-- Logo area -->
           <div class="logo-container">
-            <img src="../assets/logo/MiroFish_logo_left.jpeg" alt="MiroFish Logo" class="hero-logo" />
+            <img src="../assets/logo/agenikpredict_logo_black.png" alt="AgenikPredict Logo" class="hero-logo" />
           </div>
-          
+
           <button class="scroll-down-btn" @click="scrollToBottom">
             ↓
           </button>
         </div>
       </section>
 
-      <!-- 下半部分：双栏布局 -->
+      <!-- Lower section: Two-column layout -->
       <section class="dashboard-section">
-        <!-- 左栏：状态与步骤 -->
+        <!-- Left column: Status and steps -->
         <div class="left-panel">
           <div class="panel-header">
-            <span class="status-dot">■</span> 系统状态
+            <span class="status-dot">■</span> {{ $t('status.systemStatus') }}
           </div>
-          
-          <h2 class="section-title">准备就绪</h2>
+
+          <h2 class="section-title">{{ $t('status.ready') }}</h2>
           <p class="section-desc">
-            预测引擎待命中，可上传多份非结构化数据以初始化模拟序列
+            {{ $t('status.readyDesc') }}
           </p>
-          
-          <!-- 数据指标卡片 -->
+
+          <!-- Metrics cards -->
           <div class="metrics-row">
             <div class="metric-card">
-              <div class="metric-value">低成本</div>
-              <div class="metric-label">常规模拟平均5$/次</div>
+              <div class="metric-value">{{ $t('metrics.lowCost') }}</div>
+              <div class="metric-label">{{ $t('metrics.lowCostDesc') }}</div>
             </div>
             <div class="metric-card">
-              <div class="metric-value">高可用</div>
-              <div class="metric-label">最多百万级Agent模拟</div>
+              <div class="metric-value">{{ $t('metrics.highAvail') }}</div>
+              <div class="metric-label">{{ $t('metrics.highAvailDesc') }}</div>
             </div>
           </div>
 
-          <!-- 项目模拟步骤介绍 (新增区域) -->
+          <!-- Workflow steps -->
           <div class="steps-container">
             <div class="steps-header">
-               <span class="diamond-icon">◇</span> 工作流序列
+               <span class="diamond-icon">◇</span> {{ $t('workflow.title') }}
             </div>
             <div class="workflow-list">
               <div class="workflow-item">
                 <span class="step-num">01</span>
                 <div class="step-info">
-                  <div class="step-title">图谱构建</div>
-                  <div class="step-desc">现实种子提取 & 个体与群体记忆注入 & GraphRAG构建</div>
+                  <div class="step-title">{{ $t('steps.graphBuild') }}</div>
+                  <div class="step-desc">{{ $t('steps.graphBuildDesc') }}</div>
                 </div>
               </div>
               <div class="workflow-item">
                 <span class="step-num">02</span>
                 <div class="step-info">
-                  <div class="step-title">环境搭建</div>
-                  <div class="step-desc">实体关系抽取 & 人设生成 & 环境配置Agent注入仿真参数</div>
+                  <div class="step-title">{{ $t('steps.envSetup') }}</div>
+                  <div class="step-desc">{{ $t('steps.envSetupDesc') }}</div>
                 </div>
               </div>
               <div class="workflow-item">
                 <span class="step-num">03</span>
                 <div class="step-info">
-                  <div class="step-title">开始模拟</div>
-                  <div class="step-desc">双平台并行模拟 & 自动解析预测需求 & 动态更新时序记忆</div>
+                  <div class="step-title">{{ $t('steps.simulation') }}</div>
+                  <div class="step-desc">{{ $t('steps.simulationDesc') }}</div>
                 </div>
               </div>
               <div class="workflow-item">
                 <span class="step-num">04</span>
                 <div class="step-info">
-                  <div class="step-title">报告生成</div>
-                  <div class="step-desc">ReportAgent拥有丰富的工具集与模拟后环境进行深度交互</div>
+                  <div class="step-title">{{ $t('steps.report') }}</div>
+                  <div class="step-desc">{{ $t('steps.reportDesc') }}</div>
                 </div>
               </div>
               <div class="workflow-item">
                 <span class="step-num">05</span>
                 <div class="step-info">
-                  <div class="step-title">深度互动</div>
-                  <div class="step-desc">与模拟世界中的任意一位进行对话 & 与ReportAgent进行对话</div>
+                  <div class="step-title">{{ $t('steps.interaction') }}</div>
+                  <div class="step-desc">{{ $t('steps.interactionDesc') }}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 右栏：交互控制台 -->
+        <!-- Right column: Interactive console -->
         <div class="right-panel">
           <div class="console-box">
-            <!-- 上传区域 -->
+            <BorderBeam :size="200" :duration="12" :delay="11" />
+
+            <!-- Upload area -->
             <div class="console-section">
               <div class="console-header">
-                <span class="console-label">01 / 现实种子</span>
-                <span class="console-meta">支持格式: PDF, MD, TXT</span>
+                <span class="console-label">{{ $t('console.realitySeed') }}</span>
+                <span class="console-meta">PDF, MD, TXT, Images, Video, URL, YouTube</span>
               </div>
-              
-              <div 
+
+              <div
                 class="upload-zone"
                 :class="{ 'drag-over': isDragOver, 'has-files': files.length > 0 }"
                 @dragover.prevent="handleDragOver"
@@ -140,59 +139,100 @@
                   ref="fileInput"
                   type="file"
                   multiple
-                  accept=".pdf,.md,.txt"
+                  accept=".pdf,.md,.txt,.jpg,.jpeg,.png,.webp,.gif,.bmp,.mp4,.mov,.avi,.webm,.mkv"
                   @change="handleFileSelect"
                   style="display: none"
                   :disabled="loading"
                 />
-                
+
                 <div v-if="files.length === 0" class="upload-placeholder">
                   <div class="upload-icon">↑</div>
-                  <div class="upload-title">拖拽文件上传</div>
-                  <div class="upload-hint">或点击浏览文件系统</div>
+                  <div class="upload-title">{{ $t('upload.dragFiles') }}</div>
+                  <div class="upload-hint">{{ $t('upload.browseFiles') }}</div>
                 </div>
-                
+
                 <div v-else class="file-list">
                   <div v-for="(file, index) in files" :key="index" class="file-item">
-                    <span class="file-icon">📄</span>
+                    <span class="file-icon">{{ getFileIcon(file.name) }}</span>
                     <span class="file-name">{{ file.name }}</span>
+                    <span class="file-type-badge">{{ getFileTypeBadge(file.name) }}</span>
                     <button @click.stop="removeFile(index)" class="remove-btn">×</button>
                   </div>
                 </div>
               </div>
+
+              <div class="url-input-row">
+                <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <input
+                  v-model="urlInput"
+                  type="url"
+                  class="url-field"
+                  placeholder="Paste URL or YouTube link to extract content"
+                  :disabled="loading"
+                  @keydown.enter.prevent="addUrl"
+                />
+                <button class="url-add-btn" @click="addUrl" :disabled="!urlInput.trim() || loading">+</button>
+              </div>
+
+              <div v-if="urls.length > 0" class="url-list">
+                <div v-for="(url, index) in urls" :key="url" class="file-item">
+                  <span class="file-icon">{{ isYouTubeUrl(url) ? '▶' : '🔗' }}</span>
+                  <span class="file-name">{{ url }}</span>
+                  <span class="file-type-badge">{{ isYouTubeUrl(url) ? 'YT' : 'URL' }}</span>
+                  <button @click.stop="removeUrl(index)" class="remove-btn">×</button>
+                </div>
+              </div>
             </div>
 
-            <!-- 分割线 -->
+            <!-- Divider -->
             <div class="console-divider">
-              <span>输入参数</span>
+              <span>{{ $t('console.inputParams') }}</span>
             </div>
 
-            <!-- 输入区域 -->
+            <!-- Input area -->
             <div class="console-section">
               <div class="console-header">
-                <span class="console-label">>_ 02 / 模拟提示词</span>
+                <span class="console-label">{{ $t('console.simulationPrompt') }}</span>
+              </div>
+              <div class="template-chips">
+                <button
+                  v-for="tmpl in promptTemplates"
+                  :key="tmpl.label"
+                  class="template-chip"
+                  :class="{ active: formData.simulationRequirement === tmpl.prompt }"
+                  @click="applyTemplate(tmpl)"
+                  :disabled="loading"
+                >
+                  <svg v-if="tmpl.label === 'Investment'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                  <svg v-else-if="tmpl.label === 'Marketing'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                  <svg v-else-if="tmpl.label === 'Hiring'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                  <svg v-else-if="tmpl.label === 'Political'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                  <svg v-else-if="tmpl.label === 'Risk'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                  <svg v-else-if="tmpl.label === 'Product'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                  <span class="chip-label">{{ tmpl.label }}</span>
+                </button>
               </div>
               <div class="input-wrapper">
                 <textarea
                   v-model="formData.simulationRequirement"
                   class="code-input"
-                  placeholder="// 用自然语言输入模拟或预测需求（例.武大若发布撤销肖某处分的公告，会引发什么舆情走向）"
+                  :placeholder="$t('console.placeholder')"
                   rows="6"
                   :disabled="loading"
                 ></textarea>
-                <div class="model-badge">引擎: MiroFish-V1.0</div>
+                <div class="model-badge">{{ $t('console.engineBadge') }}</div>
               </div>
             </div>
 
-            <!-- 启动按钮 -->
+            <!-- Start button -->
             <div class="console-section btn-section">
-              <button 
+              <button
                 class="start-engine-btn"
                 @click="startSimulation"
                 :disabled="!canSubmit || loading"
               >
-                <span v-if="!loading">启动引擎</span>
-                <span v-else>初始化中...</span>
+                <span v-if="!loading">{{ $t('console.startEngine') }}</span>
+                <span v-else>{{ $t('console.initializing') }}</span>
                 <span class="btn-arrow">→</span>
               </button>
             </div>
@@ -200,7 +240,7 @@
         </div>
       </section>
 
-      <!-- 历史项目数据库 -->
+      <!-- History database -->
       <HistoryDatabase />
     </div>
   </div>
@@ -210,44 +250,74 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import ParticlesBackground from '../components/magicui/ParticlesBackground.vue'
+import BorderBeam from '../components/magicui/BorderBeam.vue'
 
 const router = useRouter()
 
-// 表单数据
+// Form data
 const formData = ref({
   simulationRequirement: ''
 })
 
-// 文件列表
+// File list
 const files = ref([])
 
-// 状态
+// URL list
+const urls = ref([])
+const urlInput = ref('')
+
+// State
 const loading = ref(false)
 const error = ref('')
 const isDragOver = ref(false)
 
-// 文件输入引用
+// File input ref
 const fileInput = ref(null)
 
-// 计算属性:是否可以提交
 const canSubmit = computed(() => {
-  return formData.value.simulationRequirement.trim() !== '' && files.value.length > 0
+  const hasPrompt = formData.value.simulationRequirement.trim() !== ''
+  const hasSources = files.value.length > 0 || urls.value.length > 0
+  return hasPrompt && hasSources
 })
 
-// 触发文件选择
+const addUrl = () => {
+  const raw = urlInput.value.trim()
+  if (!raw) return
+  try {
+    const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`)
+    if (!urls.value.includes(u.href)) {
+      urls.value.push(u.href)
+    }
+    urlInput.value = ''
+  } catch {
+    // invalid URL, ignore
+  }
+}
+
+const removeUrl = (index) => {
+  urls.value.splice(index, 1)
+}
+
+const isYouTubeUrl = (url) => {
+  return /youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts|youtube\.com\/live/.test(url)
+}
+
+// Trigger file selection dialog
 const triggerFileInput = () => {
   if (!loading.value) {
     fileInput.value?.click()
   }
 }
 
-// 处理文件选择
+// Handle file selection
 const handleFileSelect = (event) => {
   const selectedFiles = Array.from(event.target.files)
   addFiles(selectedFiles)
 }
 
-// 处理拖拽相关
+// Handle drag events
 const handleDragOver = (e) => {
   if (!loading.value) {
     isDragOver.value = true
@@ -261,26 +331,61 @@ const handleDragLeave = (e) => {
 const handleDrop = (e) => {
   isDragOver.value = false
   if (loading.value) return
-  
+
   const droppedFiles = Array.from(e.dataTransfer.files)
   addFiles(droppedFiles)
 }
 
-// 添加文件
+// Add validated files to the list
+const ALLOWED_EXTENSIONS = [
+  'pdf', 'md', 'txt',
+  'jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp',
+  'mp4', 'mov', 'avi', 'webm', 'mkv'
+]
+
 const addFiles = (newFiles) => {
   const validFiles = newFiles.filter(file => {
     const ext = file.name.split('.').pop().toLowerCase()
-    return ['pdf', 'md', 'txt'].includes(ext)
+    return ALLOWED_EXTENSIONS.includes(ext)
   })
   files.value.push(...validFiles)
 }
 
-// 移除文件
+const getFileIcon = (name) => {
+  const ext = name.split('.').pop().toLowerCase()
+  if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) return '🖼️'
+  if (['mp4', 'mov', 'avi', 'webm', 'mkv'].includes(ext)) return '🎬'
+  if (ext === 'pdf') return '📕'
+  return '📄'
+}
+
+const getFileTypeBadge = (name) => {
+  const ext = name.split('.').pop().toLowerCase()
+  if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) return 'IMG'
+  if (['mp4', 'mov', 'avi', 'webm', 'mkv'].includes(ext)) return 'VID'
+  if (ext === 'pdf') return 'PDF'
+  if (ext === 'md') return 'MD'
+  return 'TXT'
+}
+
 const removeFile = (index) => {
   files.value.splice(index, 1)
 }
 
-// 滚动到底部
+const promptTemplates = [
+  { label: 'Investment', prompt: 'Analyze the uploaded company report and simulate how the stock market, institutional investors, and retail traders would react to the disclosed financial results over the next quarter.' },
+  { label: 'Marketing', prompt: 'Simulate public reaction to the product launch described in the uploaded press release. How would different demographics respond on social media over 7 days?' },
+  { label: 'Hiring', prompt: 'Based on the uploaded candidate profile and team structure, simulate how this hire would affect team dynamics, communication patterns, and productivity over 6 months.' },
+  { label: 'Political', prompt: 'Model public opinion shifts if the policy change described in the uploaded document were announced. How would different political groups and media outlets react?' },
+  { label: 'Risk', prompt: 'Conduct due diligence on the entity described in the uploaded materials. Surface potential risks, conflicts of interest, and second-order effects that manual review might miss.' },
+  { label: 'Product', prompt: 'Simulate market response to the pricing change / feature announcement described in the uploaded document. How would competitors, customers, and analysts react?' },
+]
+
+const applyTemplate = (template) => {
+  formData.value.simulationRequirement = template.prompt
+}
+
+// Scroll to bottom of page
 const scrollToBottom = () => {
   window.scrollTo({
     top: document.body.scrollHeight,
@@ -288,15 +393,13 @@ const scrollToBottom = () => {
   })
 }
 
-// 开始模拟 - 立即跳转，API调用在Process页面进行
+// Start simulation - navigate immediately, API calls happen on the Process page
 const startSimulation = () => {
   if (!canSubmit.value || loading.value) return
-  
-  // 存储待上传的数据
+
   import('../store/pendingUpload.js').then(({ setPendingUpload }) => {
-    setPendingUpload(files.value, formData.value.simulationRequirement)
-    
-    // 立即跳转到Process页面（使用特殊标识表示新建项目）
+    setPendingUpload(files.value, formData.value.simulationRequirement, urls.value)
+
     router.push({
       name: 'Process',
       params: { projectId: 'new' }
@@ -306,39 +409,48 @@ const startSimulation = () => {
 </script>
 
 <style scoped>
-/* 全局变量与重置 */
+/* Global variables and reset */
 :root {
   --black: #000000;
-  --white: #FFFFFF;
+  --white: #FAFAFA;
   --orange: #FF4500;
-  --gray-light: #F5F5F5;
-  --gray-text: #666666;
-  --border: #E5E5E5;
-  /* 
-    使用 Space Grotesk 作为主要标题字体，JetBrains Mono 作为代码/标签字体
-    确保已在 index.html 引入这些 Google Fonts 
-  */
+  --gray-light: #111111;
+  --gray-text: #999999;
+  --border: rgba(255, 255, 255, 0.1);
   --font-mono: 'JetBrains Mono', monospace;
-  --font-sans: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
-  --font-cn: 'Noto Sans SC', system-ui, sans-serif;
+  --font-sans: 'Space Grotesk', 'Noto Sans Hebrew', system-ui, sans-serif;
+  --font-cn: 'Noto Sans Hebrew', system-ui, sans-serif;
 }
 
 .home-container {
   min-height: 100vh;
-  background: var(--white);
+  background: #000000;
   font-family: var(--font-sans);
-  color: var(--black);
+  color: #E0E0E0;
 }
 
-/* 顶部导航 */
+/* Particles background */
+.particles-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Top navigation */
 .navbar {
   height: 60px;
-  background: var(--black);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
   color: var(--white);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 40px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .nav-brand {
@@ -346,11 +458,13 @@ const startSimulation = () => {
   font-weight: 800;
   letter-spacing: 1px;
   font-size: 1.2rem;
+  color: #FFFFFF;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
 .github-link {
@@ -373,14 +487,14 @@ const startSimulation = () => {
   font-family: sans-serif;
 }
 
-/* 主要内容区 */
+/* Main content area */
 .main-content {
   max-width: 1400px;
   margin: 0 auto;
   padding: 60px 40px;
 }
 
-/* Hero 区域 */
+/* Hero section */
 .hero-section {
   display: flex;
   justify-content: space-between;
@@ -404,7 +518,7 @@ const startSimulation = () => {
 
 .orange-tag {
   background: var(--orange);
-  color: var(--white);
+  color: #FFFFFF;
   padding: 4px 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -412,7 +526,7 @@ const startSimulation = () => {
 }
 
 .version-text {
-  color: #999;
+  color: #666666;
   font-weight: 500;
   letter-spacing: 0.5px;
 }
@@ -423,11 +537,11 @@ const startSimulation = () => {
   font-weight: 500;
   margin: 0 0 40px 0;
   letter-spacing: -2px;
-  color: var(--black);
+  color: #FFFFFF;
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, #000000 0%, #444444 100%);
+  background: linear-gradient(90deg, #FFFFFF 0%, #999999 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
@@ -448,7 +562,7 @@ const startSimulation = () => {
 }
 
 .highlight-bold {
-  color: var(--black);
+  color: #FFFFFF;
   font-weight: 700;
 }
 
@@ -459,19 +573,19 @@ const startSimulation = () => {
 }
 
 .highlight-code {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   padding: 2px 6px;
   border-radius: 2px;
   font-family: var(--font-mono);
   font-size: 0.9em;
-  color: var(--black);
+  color: #FFFFFF;
   font-weight: 600;
 }
 
 .slogan-text {
   font-size: 1.2rem;
   font-weight: 520;
-  color: var(--black);
+  color: #E0E0E0;
   letter-spacing: 1px;
   border-left: 3px solid var(--orange);
   padding-left: 15px;
@@ -511,7 +625,7 @@ const startSimulation = () => {
 }
 
 .hero-logo {
-  max-width: 500px; /* 调整logo大小 */
+  max-width: 500px;
   width: 100%;
 }
 
@@ -533,7 +647,7 @@ const startSimulation = () => {
   border-color: var(--orange);
 }
 
-/* Dashboard 双栏布局 */
+/* Dashboard two-column layout */
 .dashboard-section {
   display: flex;
   gap: 60px;
@@ -548,7 +662,7 @@ const startSimulation = () => {
   flex-direction: column;
 }
 
-/* 左侧面板 */
+/* Left panel */
 .left-panel {
   flex: 0.8;
 }
@@ -556,7 +670,7 @@ const startSimulation = () => {
 .panel-header {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: #999;
+  color: #666666;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -572,6 +686,7 @@ const startSimulation = () => {
   font-size: 2rem;
   font-weight: 520;
   margin: 0 0 15px 0;
+  color: #FFFFFF;
 }
 
 .section-desc {
@@ -590,6 +705,7 @@ const startSimulation = () => {
   border: 1px solid var(--border);
   padding: 20px 30px;
   min-width: 150px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .metric-value {
@@ -597,24 +713,26 @@ const startSimulation = () => {
   font-size: 1.8rem;
   font-weight: 520;
   margin-bottom: 5px;
+  color: #FFFFFF;
 }
 
 .metric-label {
   font-size: 0.85rem;
-  color: #999;
+  color: #666666;
 }
 
-/* 项目模拟步骤介绍 */
+/* Workflow steps */
 .steps-container {
   border: 1px solid var(--border);
   padding: 30px;
   position: relative;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .steps-header {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: #999;
+  color: #666666;
   margin-bottom: 25px;
   display: flex;
   align-items: center;
@@ -641,7 +759,7 @@ const startSimulation = () => {
 .step-num {
   font-family: var(--font-mono);
   font-weight: 700;
-  color: var(--black);
+  color: #FFFFFF;
   opacity: 0.3;
 }
 
@@ -653,6 +771,7 @@ const startSimulation = () => {
   font-weight: 520;
   font-size: 1rem;
   margin-bottom: 4px;
+  color: #E0E0E0;
 }
 
 .step-desc {
@@ -660,14 +779,17 @@ const startSimulation = () => {
   color: var(--gray-text);
 }
 
-/* 右侧交互控制台 */
+/* Right interactive console */
 .right-panel {
   flex: 1.2;
 }
 
 .console-box {
-  border: 1px solid #CCC; /* 外部实线 */
-  padding: 8px; /* 内边距形成双重边框感 */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  overflow: hidden;
 }
 
 .console-section {
@@ -684,11 +806,11 @@ const startSimulation = () => {
   margin-bottom: 15px;
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: #666;
+  color: #666666;
 }
 
 .upload-zone {
-  border: 1px dashed #CCC;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
   height: 200px;
   overflow-y: auto;
   display: flex;
@@ -696,7 +818,7 @@ const startSimulation = () => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
-  background: #FAFAFA;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .upload-zone.has-files {
@@ -704,8 +826,8 @@ const startSimulation = () => {
 }
 
 .upload-zone:hover {
-  background: #F0F0F0;
-  border-color: #999;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .upload-placeholder {
@@ -715,24 +837,144 @@ const startSimulation = () => {
 .upload-icon {
   width: 40px;
   height: 40px;
-  border: 1px solid #DDD;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 15px;
-  color: #999;
+  color: #666666;
 }
 
 .upload-title {
   font-weight: 500;
   font-size: 0.9rem;
   margin-bottom: 5px;
+  color: #E0E0E0;
 }
 
 .upload-hint {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: #999;
+  color: #666666;
+}
+
+.url-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.url-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-left: 8px;
+  color: #888;
+}
+
+.url-field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #E0E0E0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  outline: none;
+  padding: 8px 4px;
+}
+
+.url-field::placeholder {
+  color: #555;
+}
+
+.url-add-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #CCC;
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.url-add-btn:hover:not(:disabled) {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.url-add-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.url-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.file-type-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #AAA;
+  letter-spacing: 0.5px;
+}
+
+.template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.template-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: #CCC;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.template-chip:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFF;
+}
+
+.template-chip.active {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: rgba(255, 69, 0, 0.08);
+}
+
+.template-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chip-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.chip-label {
+  font-weight: 500;
 }
 
 .file-list {
@@ -746,11 +988,12 @@ const startSimulation = () => {
 .file-item {
   display: flex;
   align-items: center;
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.05);
   padding: 8px 12px;
-  border: 1px solid #EEE;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-family: var(--font-mono);
   font-size: 0.85rem;
+  color: #E0E0E0;
 }
 
 .file-name {
@@ -763,7 +1006,11 @@ const startSimulation = () => {
   border: none;
   cursor: pointer;
   font-size: 1.2rem;
-  color: #999;
+  color: #666666;
+}
+
+.remove-btn:hover {
+  color: var(--orange);
 }
 
 .console-divider {
@@ -777,21 +1024,21 @@ const startSimulation = () => {
   content: '';
   flex: 1;
   height: 1px;
-  background: #EEE;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .console-divider span {
   padding: 0 15px;
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: #BBB;
+  color: #555555;
   letter-spacing: 1px;
 }
 
 .input-wrapper {
   position: relative;
-  border: 1px solid #DDD;
-  background: #FAFAFA;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .code-input {
@@ -805,6 +1052,11 @@ const startSimulation = () => {
   resize: vertical;
   outline: none;
   min-height: 150px;
+  color: #E0E0E0;
+}
+
+.code-input::placeholder {
+  color: #555555;
 }
 
 .model-badge {
@@ -813,13 +1065,13 @@ const startSimulation = () => {
   right: 15px;
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: #AAA;
+  color: #555555;
 }
 
 .start-engine-btn {
   width: 100%;
-  background: var(--black);
-  color: var(--white);
+  background: #FFFFFF;
+  color: #000000;
   border: none;
   padding: 20px;
   font-family: var(--font-mono);
@@ -835,16 +1087,17 @@ const startSimulation = () => {
   overflow: hidden;
 }
 
-/* 可点击状态（非禁用） */
+/* Enabled state (not disabled) */
 .start-engine-btn:not(:disabled) {
-  background: var(--black);
-  border: 1px solid var(--black);
+  background: #FFFFFF;
+  border: 1px solid #FFFFFF;
   animation: pulse-border 2s infinite;
 }
 
 .start-engine-btn:hover:not(:disabled) {
   background: var(--orange);
   border-color: var(--orange);
+  color: #FFFFFF;
   transform: translateY(-2px);
 }
 
@@ -853,35 +1106,72 @@ const startSimulation = () => {
 }
 
 .start-engine-btn:disabled {
-  background: #E5E5E5;
-  color: #999;
+  background: rgba(255, 255, 255, 0.08);
+  color: #555555;
   cursor: not-allowed;
   transform: none;
-  border: 1px solid #E5E5E5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 引导动画：微妙的边框脉冲 */
+/* Subtle border pulse animation */
 @keyframes pulse-border {
-  0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.2); }
-  70% { box-shadow: 0 0 0 6px rgba(0, 0, 0, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); }
+  70% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 }
 
-/* 响应式适配 */
+/* Fade-in animation with staggered delays */
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.8s ease forwards;
+  animation-delay: var(--animation-delay, 0ms);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shimmer animation for orange tag */
+.animate-shimmer {
+  background-size: 200% 100%;
+  background-image: linear-gradient(
+    90deg,
+    var(--orange) 0%,
+    #FF6B35 25%,
+    var(--orange) 50%,
+    #FF6B35 75%,
+    var(--orange) 100%
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Responsive layout */
 @media (max-width: 1024px) {
   .dashboard-section {
     flex-direction: column;
   }
-  
+
   .hero-section {
     flex-direction: column;
   }
-  
+
   .hero-left {
     padding-right: 0;
     margin-bottom: 40px;
   }
-  
+
   .hero-logo {
     max-width: 200px;
     margin-bottom: 20px;

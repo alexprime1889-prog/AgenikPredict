@@ -3,19 +3,19 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH</div>
+        <div class="brand" @click="router.push('/')">{{ $t('brand') }}</div>
       </div>
-      
+
       <div class="header-center">
         <div class="view-switcher">
-          <button 
-            v-for="mode in ['graph', 'split', 'workbench']" 
+          <button
+            v-for="mode in ['graph', 'split', 'workbench']"
             :key="mode"
             class="switch-btn"
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: '图谱', split: '双栏', workbench: '工作台' }[mode] }}
+            {{ $t('view.' + mode) }}
           </button>
         </div>
       </div>
@@ -23,13 +23,14 @@
       <div class="header-right">
         <div class="workflow-step">
           <span class="step-num">Step 5/5</span>
-          <span class="step-name">深度互动</span>
+          <span class="step-name">{{ $t('steps.interaction') }}</span>
         </div>
         <div class="step-divider"></div>
         <span class="status-indicator" :class="statusClass">
           <span class="dot"></span>
           {{ statusText }}
         </span>
+        <LanguageSwitcher />
       </div>
     </header>
 
@@ -37,7 +38,7 @@
     <main class="content-area">
       <!-- Left Panel: Graph -->
       <div class="panel-wrapper left" :style="leftPanelStyle">
-        <GraphPanel 
+        <GraphPanel
           :graphData="graphData"
           :loading="graphLoading"
           :currentPhase="5"
@@ -47,7 +48,7 @@
         />
       </div>
 
-      <!-- Right Panel: Step5 深度互动 -->
+      <!-- Right Panel: Step5 Deep Interaction -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
         <Step5Interaction
           :reportId="currentReportId"
@@ -64,12 +65,15 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step5Interaction from '../components/Step5Interaction.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import { getProject, getGraphData } from '../api/graph'
 import { getSimulation } from '../api/simulation'
 import { getReport } from '../api/report'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -78,7 +82,7 @@ const props = defineProps({
   reportId: String
 })
 
-// Layout State - 默认切换到工作台视角
+// Layout State - default to workbench view
 const viewMode = ref('workbench')
 
 // Data State
@@ -140,28 +144,28 @@ const toggleMaximize = (target) => {
 // --- Data Logic ---
 const loadReportData = async () => {
   try {
-    addLog(`加载报告数据: ${currentReportId.value}`)
-    
-    // 获取 report 信息以获取 simulation_id
+    addLog(`Loading report data: ${currentReportId.value}`)
+
+    // Get report info to obtain simulation_id
     const reportRes = await getReport(currentReportId.value)
     if (reportRes.success && reportRes.data) {
       const reportData = reportRes.data
       simulationId.value = reportData.simulation_id
-      
+
       if (simulationId.value) {
-        // 获取 simulation 信息
+        // Get simulation info
         const simRes = await getSimulation(simulationId.value)
         if (simRes.success && simRes.data) {
           const simData = simRes.data
-          
-          // 获取 project 信息
+
+          // Get project info
           if (simData.project_id) {
             const projRes = await getProject(simData.project_id)
             if (projRes.success && projRes.data) {
               projectData.value = projRes.data
-              addLog(`项目加载成功: ${projRes.data.project_id}`)
-              
-              // 获取 graph 数据
+              addLog(`Project loaded: ${projRes.data.project_id}`)
+
+              // Get graph data
               if (projRes.data.graph_id) {
                 await loadGraph(projRes.data.graph_id)
               }
@@ -170,24 +174,24 @@ const loadReportData = async () => {
         }
       }
     } else {
-      addLog(`获取报告信息失败: ${reportRes.error || '未知错误'}`)
+      addLog(`Failed to get report info: ${reportRes.error || 'Unknown error'}`)
     }
   } catch (err) {
-    addLog(`加载异常: ${err.message}`)
+    addLog(`Loading error: ${err.message}`)
   }
 }
 
 const loadGraph = async (graphId) => {
   graphLoading.value = true
-  
+
   try {
     const res = await getGraphData(graphId)
     if (res.success) {
       graphData.value = res.data
-      addLog('图谱数据加载成功')
+      addLog('Graph data loaded successfully')
     }
   } catch (err) {
-    addLog(`图谱加载失败: ${err.message}`)
+    addLog(`Graph loading failed: ${err.message}`)
   } finally {
     graphLoading.value = false
   }
@@ -208,7 +212,7 @@ watch(() => route.params.reportId, (newId) => {
 }, { immediate: true })
 
 onMounted(() => {
-  addLog('InteractionView 初始化')
+  addLog('InteractionView initialized')
   loadReportData()
 })
 </script>
@@ -218,20 +222,21 @@ onMounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #FFF;
+  background: #000000;
   overflow: hidden;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Noto Sans Hebrew', system-ui, sans-serif;
+  color: #E0E0E0;
 }
 
 /* Header */
 .app-header {
   height: 60px;
-  border-bottom: 1px solid #EAEAEA;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: #FFF;
+  background: #000000;
   z-index: 100;
   position: relative;
 }
@@ -248,11 +253,12 @@ onMounted(() => {
   font-size: 18px;
   letter-spacing: 1px;
   cursor: pointer;
+  color: #FFFFFF;
 }
 
 .view-switcher {
   display: flex;
-  background: #F5F5F5;
+  background: rgba(255, 255, 255, 0.05);
   padding: 4px;
   border-radius: 6px;
   gap: 4px;
@@ -264,16 +270,16 @@ onMounted(() => {
   padding: 6px 16px;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: #999999;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .switch-btn.active {
-  background: #FFF;
-  color: #000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  box-shadow: none;
 }
 
 .header-right {
@@ -292,18 +298,18 @@ onMounted(() => {
 .step-num {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: #999;
+  color: #999999;
 }
 
 .step-name {
   font-weight: 700;
-  color: #000;
+  color: #FFFFFF;
 }
 
 .step-divider {
   width: 1px;
   height: 14px;
-  background-color: #E0E0E0;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .status-indicator {
@@ -311,7 +317,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #666;
+  color: #999999;
   font-weight: 500;
 }
 
@@ -319,7 +325,7 @@ onMounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #CCC;
+  background: #666;
 }
 
 .status-indicator.ready .dot { background: #4CAF50; }
@@ -345,6 +351,6 @@ onMounted(() => {
 }
 
 .panel-wrapper.left {
-  border-right: 1px solid #EAEAEA;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 </style>

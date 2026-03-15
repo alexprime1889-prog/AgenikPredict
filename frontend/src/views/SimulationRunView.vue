@@ -3,19 +3,19 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH</div>
+        <div class="brand" @click="router.push('/')">{{ $t('brand') }}</div>
       </div>
-      
+
       <div class="header-center">
         <div class="view-switcher">
-          <button 
-            v-for="mode in ['graph', 'split', 'workbench']" 
+          <button
+            v-for="mode in ['graph', 'split', 'workbench']"
             :key="mode"
             class="switch-btn"
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: '图谱', split: '双栏', workbench: '工作台' }[mode] }}
+            {{ $t('view.' + mode) }}
           </button>
         </div>
       </div>
@@ -23,13 +23,14 @@
       <div class="header-right">
         <div class="workflow-step">
           <span class="step-num">Step 3/5</span>
-          <span class="step-name">开始模拟</span>
+          <span class="step-name">{{ $t('steps.simulation') }}</span>
         </div>
         <div class="step-divider"></div>
         <span class="status-indicator" :class="statusClass">
           <span class="dot"></span>
           {{ statusText }}
         </span>
+        <LanguageSwitcher />
       </div>
     </header>
 
@@ -37,7 +38,7 @@
     <main class="content-area">
       <!-- Left Panel: Graph -->
       <div class="panel-wrapper left" :style="leftPanelStyle">
-        <GraphPanel 
+        <GraphPanel
           :graphData="graphData"
           :loading="graphLoading"
           :currentPhase="3"
@@ -47,7 +48,7 @@
         />
       </div>
 
-      <!-- Right Panel: Step3 开始模拟 -->
+      <!-- Right Panel: Step3 Simulation -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
         <Step3Simulation
           :simulationId="currentSimulationId"
@@ -69,11 +70,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step3Simulation from '../components/Step3Simulation.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import { getProject, getGraphData } from '../api/graph'
 import { getSimulation, getSimulationConfig, stopSimulation, closeSimulationEnv, getEnvStatus } from '../api/simulation'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -87,9 +91,9 @@ const viewMode = ref('split')
 
 // Data State
 const currentSimulationId = ref(route.params.simulationId)
-// 直接在初始化时从 query 参数获取 maxRounds，确保子组件能立即获取到值
+// Get maxRounds from query params at init time
 const maxRounds = ref(route.query.maxRounds ? parseInt(route.query.maxRounds) : null)
-const minutesPerRound = ref(30) // 默认每轮30分钟
+const minutesPerRound = ref(30) // Default 30 minutes per round
 const projectData = ref(null)
 const graphData = ref(null)
 const graphLoading = ref(false)
@@ -145,118 +149,117 @@ const toggleMaximize = (target) => {
 }
 
 const handleGoBack = async () => {
-  // 在返回 Step 2 之前，先关闭正在运行的模拟
-  addLog('准备返回 Step 2，正在关闭模拟...')
-  
-  // 停止轮询
+  // Before returning to Step 2, close the running simulation
+  addLog('Preparing to return to Step 2, closing simulation...')
+
+  // Stop polling
   stopGraphRefresh()
-  
+
   try {
-    // 先尝试优雅关闭模拟环境
+    // Try graceful shutdown of simulation environment
     const envStatusRes = await getEnvStatus({ simulation_id: currentSimulationId.value })
-    
+
     if (envStatusRes.success && envStatusRes.data?.env_alive) {
-      addLog('正在关闭模拟环境...')
+      addLog('Closing simulation environment...')
       try {
-        await closeSimulationEnv({ 
+        await closeSimulationEnv({
           simulation_id: currentSimulationId.value,
           timeout: 10
         })
-        addLog('✓ 模拟环境已关闭')
+        addLog('Simulation environment closed')
       } catch (closeErr) {
-        addLog(`关闭模拟环境失败，尝试强制停止...`)
+        addLog('Failed to close environment, trying force stop...')
         try {
           await stopSimulation({ simulation_id: currentSimulationId.value })
-          addLog('✓ 模拟已强制停止')
+          addLog('Simulation force stopped')
         } catch (stopErr) {
-          addLog(`强制停止失败: ${stopErr.message}`)
+          addLog(`Force stop failed: ${stopErr.message}`)
         }
       }
     } else {
-      // 环境未运行，检查是否需要停止进程
+      // Environment not running, check if process needs stopping
       if (isSimulating.value) {
-        addLog('正在停止模拟进程...')
+        addLog('Stopping simulation process...')
         try {
           await stopSimulation({ simulation_id: currentSimulationId.value })
-          addLog('✓ 模拟已停止')
+          addLog('Simulation stopped')
         } catch (err) {
-          addLog(`停止模拟失败: ${err.message}`)
+          addLog(`Failed to stop simulation: ${err.message}`)
         }
       }
     }
   } catch (err) {
-    addLog(`检查模拟状态失败: ${err.message}`)
+    addLog(`Failed to check simulation status: ${err.message}`)
   }
-  
-  // 返回到 Step 2 (环境搭建)
+
+  // Return to Step 2 (Environment Setup)
   router.push({ name: 'Simulation', params: { simulationId: currentSimulationId.value } })
 }
 
 const handleNextStep = () => {
-  // Step3Simulation 组件会直接处理报告生成和路由跳转
-  // 这个方法仅作为备用
-  addLog('进入 Step 4: 报告生成')
+  // Step3Simulation component handles report generation and routing directly
+  // This method is a fallback
+  addLog('Entering Step 4: Report Generation')
 }
 
 // --- Data Logic ---
 const loadSimulationData = async () => {
   try {
-    addLog(`加载模拟数据: ${currentSimulationId.value}`)
-    
-    // 获取 simulation 信息
+    addLog(`Loading simulation data: ${currentSimulationId.value}`)
+
+    // Get simulation info
     const simRes = await getSimulation(currentSimulationId.value)
     if (simRes.success && simRes.data) {
       const simData = simRes.data
-      
-      // 获取 simulation config 以获取 minutes_per_round
+
+      // Get simulation config for minutes_per_round
       try {
         const configRes = await getSimulationConfig(currentSimulationId.value)
         if (configRes.success && configRes.data?.time_config?.minutes_per_round) {
           minutesPerRound.value = configRes.data.time_config.minutes_per_round
-          addLog(`时间配置: 每轮 ${minutesPerRound.value} 分钟`)
+          addLog(`Time config: ${minutesPerRound.value} minutes per round`)
         }
       } catch (configErr) {
-        addLog(`获取时间配置失败，使用默认值: ${minutesPerRound.value}分钟/轮`)
+        addLog(`Failed to get time config, using default: ${minutesPerRound.value} min/round`)
       }
-      
-      // 获取 project 信息
+
+      // Get project info
       if (simData.project_id) {
         const projRes = await getProject(simData.project_id)
         if (projRes.success && projRes.data) {
           projectData.value = projRes.data
-          addLog(`项目加载成功: ${projRes.data.project_id}`)
-          
-          // 获取 graph 数据
+          addLog(`Project loaded: ${projRes.data.project_id}`)
+
+          // Get graph data
           if (projRes.data.graph_id) {
             await loadGraph(projRes.data.graph_id)
           }
         }
       }
     } else {
-      addLog(`加载模拟数据失败: ${simRes.error || '未知错误'}`)
+      addLog(`Failed to load simulation data: ${simRes.error || 'Unknown error'}`)
     }
   } catch (err) {
-    addLog(`加载异常: ${err.message}`)
+    addLog(`Loading error: ${err.message}`)
   }
 }
 
 const loadGraph = async (graphId) => {
-  // 当正在模拟时，自动刷新不显示全屏 loading，以免闪烁
-  // 手动刷新或初始加载时显示 loading
+  // During simulation, auto-refresh should not show fullscreen loading
   if (!isSimulating.value) {
     graphLoading.value = true
   }
-  
+
   try {
     const res = await getGraphData(graphId)
     if (res.success) {
       graphData.value = res.data
       if (!isSimulating.value) {
-        addLog('图谱数据加载成功')
+        addLog('Graph data loaded successfully')
       }
     }
   } catch (err) {
-    addLog(`图谱加载失败: ${err.message}`)
+    addLog(`Graph loading failed: ${err.message}`)
   } finally {
     graphLoading.value = false
   }
@@ -273,8 +276,7 @@ let graphRefreshTimer = null
 
 const startGraphRefresh = () => {
   if (graphRefreshTimer) return
-  addLog('开启图谱实时刷新 (30s)')
-  // 立即刷新一次，然后每30秒刷新
+  addLog('Starting graph real-time refresh (30s)')
   graphRefreshTimer = setInterval(refreshGraph, 30000)
 }
 
@@ -282,7 +284,7 @@ const stopGraphRefresh = () => {
   if (graphRefreshTimer) {
     clearInterval(graphRefreshTimer)
     graphRefreshTimer = null
-    addLog('停止图谱实时刷新')
+    addLog('Stopped graph real-time refresh')
   }
 }
 
@@ -295,13 +297,13 @@ watch(isSimulating, (newValue) => {
 }, { immediate: true })
 
 onMounted(() => {
-  addLog('SimulationRunView 初始化')
-  
-  // 记录 maxRounds 配置（值已在初始化时从 query 参数获取）
+  addLog('SimulationRunView initialized')
+
+  // Log maxRounds config
   if (maxRounds.value) {
-    addLog(`自定义模拟轮数: ${maxRounds.value}`)
+    addLog(`Custom simulation rounds: ${maxRounds.value}`)
   }
-  
+
   loadSimulationData()
 })
 
@@ -315,20 +317,21 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #FFF;
+  background: #000000;
   overflow: hidden;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Noto Sans Hebrew', system-ui, sans-serif;
+  color: #E0E0E0;
 }
 
 /* Header */
 .app-header {
   height: 60px;
-  border-bottom: 1px solid #EAEAEA;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: #FFF;
+  background: #000000;
   z-index: 100;
   position: relative;
 }
@@ -345,11 +348,12 @@ onUnmounted(() => {
   font-size: 18px;
   letter-spacing: 1px;
   cursor: pointer;
+  color: #FFFFFF;
 }
 
 .view-switcher {
   display: flex;
-  background: #F5F5F5;
+  background: rgba(255, 255, 255, 0.05);
   padding: 4px;
   border-radius: 6px;
   gap: 4px;
@@ -361,16 +365,16 @@ onUnmounted(() => {
   padding: 6px 16px;
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: #999999;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .switch-btn.active {
-  background: #FFF;
-  color: #000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  box-shadow: none;
 }
 
 .header-right {
@@ -389,18 +393,18 @@ onUnmounted(() => {
 .step-num {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: #999;
+  color: #999999;
 }
 
 .step-name {
   font-weight: 700;
-  color: #000;
+  color: #FFFFFF;
 }
 
 .step-divider {
   width: 1px;
   height: 14px;
-  background-color: #E0E0E0;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .status-indicator {
@@ -408,7 +412,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #666;
+  color: #999999;
   font-weight: 500;
 }
 
@@ -416,7 +420,7 @@ onUnmounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #CCC;
+  background: #666;
 }
 
 .status-indicator.processing .dot { background: #FF5722; animation: pulse 1s infinite; }
@@ -441,7 +445,6 @@ onUnmounted(() => {
 }
 
 .panel-wrapper.left {
-  border-right: 1px solid #EAEAEA;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 </style>
-

@@ -1,0 +1,57 @@
+/* Magic UI Animations */
+:root {
+  --color-one: #ffbd7a;
+  --color-two: #fe8bbb;
+  --color-three: #9e7aff;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes shimmer {
+  0%, 90%, 100% { background-position: calc(-100% - var(--shimmer-width)) 0; }
+  30%, 60% { background-position: calc(100% + var(--shimmer-width)) 0; }
+}
+
+@keyframes image-glow {
+  0% { opacity: 0; animation-timing-function: cubic-bezier(0.74, 0.25, 0.76, 1); }
+  10% { opacity: 0.7; animation-timing-function: cubic-bezier(0.12, 0.01, 0.08, 0.99); }
+  100% { opacity: 0.4; }
+}
+
+@keyframes border-beam-move {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fade-in 1000ms var(--animation-delay, 0ms) ease forwards;
+}
+
+.animate-fade-up {
+  opacity: 0;
+  animation: fade-up 1000ms var(--animation-delay, 0ms) ease forwards;
+}
+
+.animate-shimmer {
+  background-size: var(--shimmer-width, 100px) 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer 8s infinite;
+  background-image: linear-gradient(to right, #999, #fff 50%, #999);
+  -webkit-text-fill-color: transparent;
+}
+
+.animate-image-glow {
+  animation: image-glow 4100ms 600ms ease-out forwards;
+}
