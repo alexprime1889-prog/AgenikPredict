@@ -57,7 +57,9 @@ def generate_report():
             }), 400
         
         force_regenerate = data.get('force_regenerate', False)
-        
+        custom_persona = data.get('custom_persona', '')
+        report_variables = data.get('report_variables', {})
+
         # Get simulation info
         manager = SimulationManager()
         state = manager.get_simulation(simulation_id)
@@ -138,7 +140,9 @@ def generate_report():
                     graph_id=graph_id,
                     simulation_id=simulation_id,
                     simulation_requirement=simulation_requirement,
-                    language=language
+                    language=language,
+                    custom_persona=custom_persona,
+                    report_variables=report_variables
                 )
                 
                 # Progress callback

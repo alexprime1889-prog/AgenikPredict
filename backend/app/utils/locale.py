@@ -11,6 +11,13 @@ LOCALE_NAMES = {
     'ru': 'Russian',
     'es': 'Spanish',
     'de': 'German',
+    'fr': 'French',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'pl': 'Polish',
+    'nl': 'Dutch',
+    'tr': 'Turkish',
+    'ar': 'Arabic',
 }
 
 
@@ -29,4 +36,22 @@ def get_llm_language_instruction(locale_code: str) -> str:
     if not locale_code or locale_code == 'en':
         return ''
     name = get_language_name(locale_code)
-    return f'\n\nIMPORTANT: Respond entirely in {name}. All text output must be in {name}.'
+    rtl_note = '\n- Text direction: Right-to-Left (RTL).' if locale_code in ('he', 'ar') else ''
+    return f"""
+
+═══════════════════════════════════════════════════════════════
+[LANGUAGE REQUIREMENT — MANDATORY]
+═══════════════════════════════════════════════════════════════
+
+You MUST write the ENTIRE response in **{name}** — no exceptions.
+
+- Report title: in {name}
+- Report summary: in {name}
+- All section titles: in {name}
+- All body text: in {name}
+- All quoted content: translated to {name}
+- All analysis and conclusions: in {name}{rtl_note}
+
+When tools return content in English or mixed languages, you MUST translate it to {name} before including it in the report.
+DO NOT mix languages. Every single word of the output must be in {name}.
+The only exceptions are: proper nouns (names, brands), technical terms that have no translation, and code/URLs."""

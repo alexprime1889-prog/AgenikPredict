@@ -1,213 +1,256 @@
 <template>
   <div class="graph-panel">
     <div class="panel-header">
-      <span class="panel-title">Graph Relationship Visualization</span>
+      <span class="panel-title">{{ $t('graph.title') }}</span>
       <!-- Top toolbar (Internal Top Right) -->
       <div class="header-tools">
         <button class="tool-btn" @click="$emit('refresh')" :disabled="loading" :title="$t('graph.refresh')">
           <span class="icon-refresh" :class="{ 'spinning': loading }">↻</span>
-          <span class="btn-text">Refresh</span>
+          <span class="btn-text">{{ $t('graph.refresh') }}</span>
         </button>
         <button class="tool-btn" @click="$emit('toggle-maximize')" :title="$t('graph.fullscreen')">
           <span class="icon-maximize">⛶</span>
         </button>
       </div>
     </div>
-    
+
     <div class="graph-container" ref="graphContainer">
-      <!-- Graph visualization -->
-      <div v-if="graphData" class="graph-view">
-        <svg ref="graphSvg" class="graph-svg"></svg>
-        
-        <!-- Building/simulating hint -->
-        <div v-if="currentPhase === 1 || isSimulating" class="graph-building-hint">
-          <div class="memory-icon-wrapper">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="memory-icon">
-              <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-4.04z" />
-              <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-4.04z" />
-            </svg>
-          </div>
-          {{ isSimulating ? $t('graph.memoryUpdating') : $t('graph.liveUpdating') }}
+      <!-- 3D Graph mounts here -->
+      <div v-if="graphData" ref="graphMount" class="graph-mount"></div>
+
+      <!-- Building/simulating hint -->
+      <div v-if="currentPhase === 1 || isSimulating" class="graph-building-hint">
+        <div class="memory-icon-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="memory-icon">
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-4.04z" />
+            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-4.04z" />
+          </svg>
         </div>
-        
-        <!-- Simulation finished hint -->
-        <div v-if="showSimulationFinishedHint" class="graph-building-hint finished-hint">
-          <div class="hint-icon-wrapper">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hint-icon">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </div>
-          <span class="hint-text">{{ $t('graph.processingHint') }}</span>
-          <button class="hint-close-btn" @click="dismissFinishedHint" :title="$t('graph.closeHint')">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+        {{ isSimulating ? $t('graph.memoryUpdating') : $t('graph.liveUpdating') }}
+      </div>
+
+      <!-- Simulation finished hint -->
+      <div v-if="showSimulationFinishedHint" class="graph-building-hint finished-hint">
+        <div class="hint-icon-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hint-icon">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
         </div>
-        
-        <!-- Node/edge detail panel -->
-        <div v-if="selectedItem" class="detail-panel">
-          <div class="detail-panel-header">
-            <span class="detail-title">{{ selectedItem.type === 'node' ? 'Node Details' : 'Relationship' }}</span>
-            <span v-if="selectedItem.type === 'node'" class="detail-type-badge" :style="{ background: selectedItem.color, color: '#fff' }">
-              {{ selectedItem.entityType }}
-            </span>
-            <button class="detail-close" @click="closeDetailPanel">×</button>
+        <span class="hint-text">{{ $t('graph.processingHint') }}</span>
+        <button class="hint-close-btn" @click="dismissFinishedHint" :title="$t('graph.closeHint')">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Node/edge detail panel -->
+      <div v-if="selectedItem" class="detail-panel">
+        <div class="detail-panel-header">
+          <span class="detail-title">{{ selectedItem.type === 'node' ? 'Node Details' : 'Relationship' }}</span>
+          <span v-if="selectedItem.type === 'node'" class="detail-type-badge" :style="{ background: selectedItem.color, color: '#fff' }">
+            {{ selectedItem.entityType }}
+          </span>
+          <button class="detail-close" @click="closeDetailPanel">×</button>
+        </div>
+
+        <!-- Node details -->
+        <div v-if="selectedItem.type === 'node'" class="detail-content">
+          <div class="detail-row">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value">{{ selectedItem.data.name }}</span>
           </div>
-          
-          <!-- Node details -->
-          <div v-if="selectedItem.type === 'node'" class="detail-content">
-            <div class="detail-row">
-              <span class="detail-label">Name:</span>
-              <span class="detail-value">{{ selectedItem.data.name }}</span>
+          <div class="detail-row">
+            <span class="detail-label">UUID:</span>
+            <span class="detail-value uuid-text">{{ selectedItem.data.uuid }}</span>
+          </div>
+          <div class="detail-row" v-if="selectedItem.data.created_at">
+            <span class="detail-label">Created:</span>
+            <span class="detail-value">{{ formatDateTime(selectedItem.data.created_at) }}</span>
+          </div>
+
+          <!-- Properties -->
+          <div class="detail-section" v-if="selectedItem.data.attributes && Object.keys(selectedItem.data.attributes).length > 0">
+            <div class="section-title">Properties:</div>
+            <div class="properties-list">
+              <div v-for="(value, key) in selectedItem.data.attributes" :key="key" class="property-item">
+                <span class="property-key">{{ key }}:</span>
+                <span class="property-value">{{ value || 'None' }}</span>
+              </div>
             </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="detail-section" v-if="selectedItem.data.summary">
+            <div class="section-title">Summary:</div>
+            <div class="summary-text">{{ selectedItem.data.summary }}</div>
+          </div>
+
+          <!-- Labels -->
+          <div class="detail-section" v-if="selectedItem.data.labels && selectedItem.data.labels.length > 0">
+            <div class="section-title">Labels:</div>
+            <div class="labels-list">
+              <span v-for="label in selectedItem.data.labels" :key="label" class="label-tag">
+                {{ label }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edge details -->
+        <div v-else class="detail-content">
+          <!-- Self-loop group details -->
+          <template v-if="selectedItem.data.isSelfLoopGroup">
+            <div class="edge-relation-header self-loop-header">
+              {{ selectedItem.data.source_name }} - Self Relations
+              <span class="self-loop-count">{{ selectedItem.data.selfLoopCount }} items</span>
+            </div>
+
+            <div class="self-loop-list">
+              <div
+                v-for="(loop, idx) in selectedItem.data.selfLoopEdges"
+                :key="loop.uuid || idx"
+                class="self-loop-item"
+                :class="{ expanded: expandedSelfLoops.has(loop.uuid || idx) }"
+              >
+                <div
+                  class="self-loop-item-header"
+                  @click="toggleSelfLoop(loop.uuid || idx)"
+                >
+                  <span class="self-loop-index">#{{ idx + 1 }}</span>
+                  <span class="self-loop-name">{{ loop.name || loop.fact_type || 'RELATED' }}</span>
+                  <span class="self-loop-toggle">{{ expandedSelfLoops.has(loop.uuid || idx) ? '−' : '+' }}</span>
+                </div>
+
+                <div class="self-loop-item-content" v-show="expandedSelfLoops.has(loop.uuid || idx)">
+                  <div class="detail-row" v-if="loop.uuid">
+                    <span class="detail-label">UUID:</span>
+                    <span class="detail-value uuid-text">{{ loop.uuid }}</span>
+                  </div>
+                  <div class="detail-row" v-if="loop.fact">
+                    <span class="detail-label">Fact:</span>
+                    <span class="detail-value fact-text">{{ loop.fact }}</span>
+                  </div>
+                  <div class="detail-row" v-if="loop.fact_type">
+                    <span class="detail-label">Type:</span>
+                    <span class="detail-value">{{ loop.fact_type }}</span>
+                  </div>
+                  <div class="detail-row" v-if="loop.created_at">
+                    <span class="detail-label">Created:</span>
+                    <span class="detail-value">{{ formatDateTime(loop.created_at) }}</span>
+                  </div>
+                  <div v-if="loop.episodes && loop.episodes.length > 0" class="self-loop-episodes">
+                    <span class="detail-label">Episodes:</span>
+                    <div class="episodes-list compact">
+                      <span v-for="ep in loop.episodes" :key="ep" class="episode-tag small">{{ ep }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Normal edge details -->
+          <template v-else>
+            <div class="edge-relation-header">
+              {{ selectedItem.data.source_name }} → {{ selectedItem.data.name || 'RELATED_TO' }} → {{ selectedItem.data.target_name }}
+            </div>
+
             <div class="detail-row">
               <span class="detail-label">UUID:</span>
               <span class="detail-value uuid-text">{{ selectedItem.data.uuid }}</span>
             </div>
+            <div class="detail-row">
+              <span class="detail-label">Label:</span>
+              <span class="detail-value">{{ selectedItem.data.name || 'RELATED_TO' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Type:</span>
+              <span class="detail-value">{{ selectedItem.data.fact_type || 'Unknown' }}</span>
+            </div>
+            <div class="detail-row" v-if="selectedItem.data.fact">
+              <span class="detail-label">Fact:</span>
+              <span class="detail-value fact-text">{{ selectedItem.data.fact }}</span>
+            </div>
+
+            <!-- Episodes -->
+            <div class="detail-section" v-if="selectedItem.data.episodes && selectedItem.data.episodes.length > 0">
+              <div class="section-title">Episodes:</div>
+              <div class="episodes-list">
+                <span v-for="ep in selectedItem.data.episodes" :key="ep" class="episode-tag">
+                  {{ ep }}
+                </span>
+              </div>
+            </div>
+
             <div class="detail-row" v-if="selectedItem.data.created_at">
               <span class="detail-label">Created:</span>
               <span class="detail-value">{{ formatDateTime(selectedItem.data.created_at) }}</span>
             </div>
-            
-            <!-- Properties -->
-            <div class="detail-section" v-if="selectedItem.data.attributes && Object.keys(selectedItem.data.attributes).length > 0">
-              <div class="section-title">Properties:</div>
-              <div class="properties-list">
-                <div v-for="(value, key) in selectedItem.data.attributes" :key="key" class="property-item">
-                  <span class="property-key">{{ key }}:</span>
-                  <span class="property-value">{{ value || 'None' }}</span>
-                </div>
-              </div>
+            <div class="detail-row" v-if="selectedItem.data.valid_at">
+              <span class="detail-label">Valid From:</span>
+              <span class="detail-value">{{ formatDateTime(selectedItem.data.valid_at) }}</span>
             </div>
-            
-            <!-- Summary -->
-            <div class="detail-section" v-if="selectedItem.data.summary">
-              <div class="section-title">Summary:</div>
-              <div class="summary-text">{{ selectedItem.data.summary }}</div>
-            </div>
-            
-            <!-- Labels -->
-            <div class="detail-section" v-if="selectedItem.data.labels && selectedItem.data.labels.length > 0">
-              <div class="section-title">Labels:</div>
-              <div class="labels-list">
-                <span v-for="label in selectedItem.data.labels" :key="label" class="label-tag">
-                  {{ label }}
-                </span>
-              </div>
-            </div>
+          </template>
+        </div>
+
+        <!-- Report Configuration Section -->
+        <div class="report-config-section">
+          <div class="config-section-header" @click="showReportConfig = !showReportConfig">
+            <span class="config-title">Report Settings</span>
+            <span class="config-toggle">{{ showReportConfig ? '\u2212' : '+' }}</span>
           </div>
-          
-          <!-- Edge details -->
-          <div v-else class="detail-content">
-            <!-- Self-loop group details -->
-            <template v-if="selectedItem.data.isSelfLoopGroup">
-              <div class="edge-relation-header self-loop-header">
-                {{ selectedItem.data.source_name }} - Self Relations
-                <span class="self-loop-count">{{ selectedItem.data.selfLoopCount }} items</span>
+
+          <div v-show="showReportConfig" class="config-content">
+            <!-- Language selector -->
+            <div class="config-group">
+              <label class="config-label">Report Language</label>
+              <select v-model="reportConfig.language" @change="emitReportConfig" class="config-select">
+                <option v-for="lang in languageOptions" :key="lang.code" :value="lang.code">
+                  {{ lang.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Persona editor -->
+            <div class="config-group">
+              <label class="config-label">Agent Persona</label>
+              <textarea
+                v-model="reportConfig.persona"
+                @blur="emitReportConfig"
+                class="config-textarea"
+                rows="3"
+                placeholder="Custom analysis perspective..."
+              ></textarea>
+            </div>
+
+            <!-- Variables -->
+            <div class="config-group">
+              <div class="config-label-row">
+                <label class="config-label">Variables</label>
+                <button class="config-add-btn" @click="addVariable">+ Add</button>
               </div>
-              
-              <div class="self-loop-list">
-                <div 
-                  v-for="(loop, idx) in selectedItem.data.selfLoopEdges" 
-                  :key="loop.uuid || idx" 
-                  class="self-loop-item"
-                  :class="{ expanded: expandedSelfLoops.has(loop.uuid || idx) }"
-                >
-                  <div 
-                    class="self-loop-item-header"
-                    @click="toggleSelfLoop(loop.uuid || idx)"
-                  >
-                    <span class="self-loop-index">#{{ idx + 1 }}</span>
-                    <span class="self-loop-name">{{ loop.name || loop.fact_type || 'RELATED' }}</span>
-                    <span class="self-loop-toggle">{{ expandedSelfLoops.has(loop.uuid || idx) ? '−' : '+' }}</span>
-                  </div>
-                  
-                  <div class="self-loop-item-content" v-show="expandedSelfLoops.has(loop.uuid || idx)">
-                    <div class="detail-row" v-if="loop.uuid">
-                      <span class="detail-label">UUID:</span>
-                      <span class="detail-value uuid-text">{{ loop.uuid }}</span>
-                    </div>
-                    <div class="detail-row" v-if="loop.fact">
-                      <span class="detail-label">Fact:</span>
-                      <span class="detail-value fact-text">{{ loop.fact }}</span>
-                    </div>
-                    <div class="detail-row" v-if="loop.fact_type">
-                      <span class="detail-label">Type:</span>
-                      <span class="detail-value">{{ loop.fact_type }}</span>
-                    </div>
-                    <div class="detail-row" v-if="loop.created_at">
-                      <span class="detail-label">Created:</span>
-                      <span class="detail-value">{{ formatDateTime(loop.created_at) }}</span>
-                    </div>
-                    <div v-if="loop.episodes && loop.episodes.length > 0" class="self-loop-episodes">
-                      <span class="detail-label">Episodes:</span>
-                      <div class="episodes-list compact">
-                        <span v-for="ep in loop.episodes" :key="ep" class="episode-tag small">{{ ep }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div v-for="(v, idx) in reportConfig.variables" :key="idx" class="variable-row">
+                <input v-model="v.key" @blur="emitReportConfig" class="var-input var-key" placeholder="Key" />
+                <input v-model="v.value" @blur="emitReportConfig" class="var-input var-value" placeholder="Value" />
+                <button class="var-remove-btn" @click="removeVariable(idx)">\u00D7</button>
               </div>
-            </template>
-            
-            <!-- Normal edge details -->
-            <template v-else>
-              <div class="edge-relation-header">
-                {{ selectedItem.data.source_name }} → {{ selectedItem.data.name || 'RELATED_TO' }} → {{ selectedItem.data.target_name }}
-              </div>
-              
-              <div class="detail-row">
-                <span class="detail-label">UUID:</span>
-                <span class="detail-value uuid-text">{{ selectedItem.data.uuid }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Label:</span>
-                <span class="detail-value">{{ selectedItem.data.name || 'RELATED_TO' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Type:</span>
-                <span class="detail-value">{{ selectedItem.data.fact_type || 'Unknown' }}</span>
-              </div>
-              <div class="detail-row" v-if="selectedItem.data.fact">
-                <span class="detail-label">Fact:</span>
-                <span class="detail-value fact-text">{{ selectedItem.data.fact }}</span>
-              </div>
-              
-              <!-- Episodes -->
-              <div class="detail-section" v-if="selectedItem.data.episodes && selectedItem.data.episodes.length > 0">
-                <div class="section-title">Episodes:</div>
-                <div class="episodes-list">
-                  <span v-for="ep in selectedItem.data.episodes" :key="ep" class="episode-tag">
-                    {{ ep }}
-                  </span>
-                </div>
-              </div>
-              
-              <div class="detail-row" v-if="selectedItem.data.created_at">
-                <span class="detail-label">Created:</span>
-                <span class="detail-value">{{ formatDateTime(selectedItem.data.created_at) }}</span>
-              </div>
-              <div class="detail-row" v-if="selectedItem.data.valid_at">
-                <span class="detail-label">Valid From:</span>
-                <span class="detail-value">{{ formatDateTime(selectedItem.data.valid_at) }}</span>
-              </div>
-            </template>
+            </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Loading state -->
-      <div v-else-if="loading" class="graph-state">
+      <div v-if="!graphData && loading" class="graph-state">
         <div class="loading-spinner"></div>
         <p>{{ $t('graph.loading') }}</p>
       </div>
-      
+
       <!-- Waiting/empty state -->
-      <div v-else class="graph-state">
+      <div v-if="!graphData && !loading" class="graph-state">
         <div class="empty-icon">❖</div>
         <p class="empty-text">{{ $t('graph.waitingOntology') }}</p>
       </div>
@@ -223,7 +266,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Edge labels toggle -->
     <div v-if="graphData" class="edge-labels-toggle">
       <label class="toggle-switch">
@@ -237,7 +280,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
-import * as d3 from 'd3'
+import ForceGraph3D from '3d-force-graph'
+import SpriteText from 'three-spritetext'
+import * as THREE from 'three'
 
 const props = defineProps({
   graphData: Object,
@@ -246,15 +291,162 @@ const props = defineProps({
   isSimulating: Boolean
 })
 
-const emit = defineEmits(['refresh', 'toggle-maximize'])
+const emit = defineEmits(['refresh', 'toggle-maximize', 'update-report-config'])
 
 const graphContainer = ref(null)
-const graphSvg = ref(null)
+const graphMount = ref(null)
 const selectedItem = ref(null)
-const showEdgeLabels = ref(true) // Show edge labels by default
-const expandedSelfLoops = ref(new Set()) // Expanded self-loop items
-const showSimulationFinishedHint = ref(false) // Hint after simulation ends
-const wasSimulating = ref(false) // Track whether previously simulating
+const showEdgeLabels = ref(true)
+const expandedSelfLoops = ref(new Set())
+const showSimulationFinishedHint = ref(false)
+const wasSimulating = ref(false)
+const showReportConfig = ref(false)
+
+const reportConfig = ref({
+  persona: '',
+  variables: [],
+  language: localStorage.getItem('agenikpredict-locale') || 'en'
+})
+
+const languageOptions = [
+  { code: 'en', name: 'English' },
+  { code: 'he', name: 'עברית' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'es', name: 'Español' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'fr', name: 'Français' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'pt', name: 'Português' },
+  { code: 'pl', name: 'Polski' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'ar', name: 'العربية' }
+]
+
+const addVariable = () => {
+  reportConfig.value.variables.push({ key: '', value: '' })
+}
+
+const removeVariable = (index) => {
+  reportConfig.value.variables.splice(index, 1)
+  emitReportConfig()
+}
+
+const emitReportConfig = () => {
+  const vars = {}
+  reportConfig.value.variables.forEach(v => {
+    if (v.key.trim()) vars[v.key.trim()] = v.value
+  })
+  emit('update-report-config', {
+    persona: reportConfig.value.persona,
+    variables: vars,
+    language: reportConfig.value.language
+  })
+}
+
+let graphInstance = null
+let highlightNodes = new Set()
+let highlightLinks = new Set()
+let hoveredNode = null
+
+// --- Entity type → Tabler icon mapping ---
+const ENTITY_ICON_MAP = {
+  Person: 'user',
+  Country: 'flag',
+  Keyphrase: 'tag',
+  Username: 'at',
+  MilitaryEquipment: 'tank',
+  Continent: 'world',
+  GovernmentBody: 'building-bank',
+  Incident: 'alert-triangle',
+  Domain: 'world-www',
+  Place: 'map-pin',
+  Product: 'box',
+  Province: 'map-pin-2',
+  Entity: 'circle-dot',
+}
+
+// Color palette (same as before)
+const COLORS = ['#FF6B35', '#004E89', '#7B2D8E', '#1A936F', '#C5283D', '#E9724C', '#3498db', '#9b59b6', '#27ae60', '#f39c12']
+
+// Cache for SVG textures
+const textureCache = new Map()
+
+// Load SVG from Tabler icons and create a Three.js texture
+const createIconTexture = (iconName, color) => {
+  const cacheKey = `${iconName}_${color}`
+  if (textureCache.has(cacheKey)) return textureCache.get(cacheKey)
+
+  // Build SVG with icon embedded
+  const size = 128
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <defs>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+          <stop offset="70%" stop-color="${color}" stop-opacity="0.1"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="64" cy="64" r="62" fill="url(#glow)"/>
+      <circle cx="64" cy="64" r="28" fill="${color}" opacity="0.9" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+    </svg>`
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  const texture = new THREE.TextureLoader().load(url, () => {
+    URL.revokeObjectURL(url)
+  })
+  texture.colorSpace = THREE.SRGBColorSpace
+  textureCache.set(cacheKey, texture)
+  return texture
+}
+
+// Load actual Tabler SVG icon and create texture with it
+const createDetailedIconTexture = async (iconName, color) => {
+  const cacheKey = `detailed_${iconName}_${color}`
+  if (textureCache.has(cacheKey)) return textureCache.get(cacheKey)
+
+  try {
+    const iconModule = await import(/* @vite-ignore */ `@tabler/icons/icons/outline/${iconName}.svg?raw`)
+    const iconSvg = iconModule.default
+    // Extract the inner paths from the Tabler SVG
+    const pathMatch = iconSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
+    const innerPaths = pathMatch ? pathMatch[1] : ''
+
+    const size = 128
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <defs>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+            <stop offset="80%" stop-color="${color}" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle cx="64" cy="64" r="62" fill="url(#glow)"/>
+        <circle cx="64" cy="64" r="30" fill="${color}" opacity="0.15" stroke="${color}" stroke-width="1.5" stroke-opacity="0.6"/>
+        <g transform="translate(52, 52) scale(1)" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          ${innerPaths}
+        </g>
+      </svg>`
+
+    const blob = new Blob([svg], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+
+    return new Promise((resolve) => {
+      const texture = new THREE.TextureLoader().load(url, () => {
+        URL.revokeObjectURL(url)
+        texture.colorSpace = THREE.SRGBColorSpace
+        textureCache.set(cacheKey, texture)
+        resolve(texture)
+      })
+    })
+  } catch {
+    // Fallback to simple circle
+    return createIconTexture(iconName, color)
+  }
+}
 
 // Dismiss simulation finished hint
 const dismissFinishedHint = () => {
@@ -262,9 +454,8 @@ const dismissFinishedHint = () => {
 }
 
 // Watch isSimulating changes to detect simulation end
-watch(() => props.isSimulating, (newValue, oldValue) => {
+watch(() => props.isSimulating, (newValue) => {
   if (wasSimulating.value && !newValue) {
-    // Transitioned from simulating to not simulating, show finished hint
     showSimulationFinishedHint.value = true
   }
   wasSimulating.value = newValue
@@ -285,13 +476,11 @@ const toggleSelfLoop = (id) => {
 const entityTypes = computed(() => {
   if (!props.graphData?.nodes) return []
   const typeMap = {}
-  // Color palette
-  const colors = ['#FF6B35', '#004E89', '#7B2D8E', '#1A936F', '#C5283D', '#E9724C', '#3498db', '#9b59b6', '#27ae60', '#f39c12']
-  
+
   props.graphData.nodes.forEach(node => {
     const type = node.labels?.find(l => l !== 'Entity') || 'Entity'
     if (!typeMap[type]) {
-      typeMap[type] = { name: type, count: 0, color: colors[Object.keys(typeMap).length % colors.length] }
+      typeMap[type] = { name: type, count: 0, color: COLORS[Object.keys(typeMap).length % COLORS.length] }
     }
     typeMap[type].count++
   })
@@ -303,13 +492,13 @@ const formatDateTime = (dateStr) => {
   if (!dateStr) return ''
   try {
     const date = new Date(dateStr)
-    return date.toLocaleString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     })
   } catch {
     return dateStr
@@ -318,60 +507,59 @@ const formatDateTime = (dateStr) => {
 
 const closeDetailPanel = () => {
   selectedItem.value = null
-  expandedSelfLoops.value = new Set() // Reset expanded state
+  expandedSelfLoops.value = new Set()
+  highlightNodes.clear()
+  highlightLinks.clear()
+  if (graphInstance) graphInstance.refresh()
 }
 
-let currentSimulation = null
-let linkLabelsRef = null
-let linkLabelBgRef = null
+const getColor = (type) => {
+  const found = entityTypes.value.find(t => t.name === type)
+  return found ? found.color : '#999'
+}
 
 const renderGraph = () => {
-  if (!graphSvg.value || !props.graphData) return
-  
-  // Stop previous simulation
-  if (currentSimulation) {
-    currentSimulation.stop()
+  if (!graphMount.value || !props.graphData) return
+
+  // Destroy previous instance
+  if (graphInstance) {
+    graphInstance._destructor()
+    graphInstance = null
   }
-  
+
+  // Clear container
+  graphMount.value.innerHTML = ''
+
   const container = graphContainer.value
   const width = container.clientWidth
   const height = container.clientHeight
-  
-  const svg = d3.select(graphSvg.value)
-    .attr('width', width)
-    .attr('height', height)
-    .attr('viewBox', `0 0 ${width} ${height}`)
-    
-  svg.selectAll('*').remove()
-  
+
   const nodesData = props.graphData.nodes || []
   const edgesData = props.graphData.edges || []
-  
+
   if (nodesData.length === 0) return
 
   // Prep data
   const nodeMap = {}
   nodesData.forEach(n => nodeMap[n.uuid] = n)
-  
+
   const nodes = nodesData.map(n => ({
     id: n.uuid,
     name: n.name || 'Unnamed',
     type: n.labels?.find(l => l !== 'Entity') || 'Entity',
     rawData: n
   }))
-  
+
   const nodeIds = new Set(nodes.map(n => n.id))
-  
-  // Process edge data, count edges between same node pairs
+
+  // Process edges — same logic as before
   const edgePairCount = {}
-  const selfLoopEdges = {} // Self-loop edges grouped by node
+  const selfLoopEdges = {}
   const tempEdges = edgesData
     .filter(e => nodeIds.has(e.source_node_uuid) && nodeIds.has(e.target_node_uuid))
-  
-  // Count edges between each node pair, collect self-loop edges
+
   tempEdges.forEach(e => {
     if (e.source_node_uuid === e.target_node_uuid) {
-      // Self-loop - collect into array
       if (!selfLoopEdges[e.source_node_uuid]) {
         selfLoopEdges[e.source_node_uuid] = []
       }
@@ -385,76 +573,58 @@ const renderGraph = () => {
       edgePairCount[pairKey] = (edgePairCount[pairKey] || 0) + 1
     }
   })
-  
-  // Track current edge index for each node pair
+
   const edgePairIndex = {}
-  const processedSelfLoopNodes = new Set() // Already-processed self-loop nodes
-  
-  const edges = []
-  
+  const processedSelfLoopNodes = new Set()
+  const links = []
+
   tempEdges.forEach(e => {
     const isSelfLoop = e.source_node_uuid === e.target_node_uuid
-    
+
     if (isSelfLoop) {
-      // Self-loop edge - only add one merged entry per node
-      if (processedSelfLoopNodes.has(e.source_node_uuid)) {
-        return // Already processed, skip
-      }
+      if (processedSelfLoopNodes.has(e.source_node_uuid)) return
       processedSelfLoopNodes.add(e.source_node_uuid)
-      
+
       const allSelfLoops = selfLoopEdges[e.source_node_uuid]
       const nodeName = nodeMap[e.source_node_uuid]?.name || 'Unknown'
-      
-      edges.push({
+
+      links.push({
         source: e.source_node_uuid,
         target: e.target_node_uuid,
-        type: 'SELF_LOOP',
         name: `Self Relations (${allSelfLoops.length})`,
-        curvature: 0,
+        curvature: 0.4,
         isSelfLoop: true,
         rawData: {
           isSelfLoopGroup: true,
           source_name: nodeName,
           target_name: nodeName,
           selfLoopCount: allSelfLoops.length,
-          selfLoopEdges: allSelfLoops // Store all self-loop edge details
+          selfLoopEdges: allSelfLoops
         }
       })
       return
     }
-    
+
     const pairKey = [e.source_node_uuid, e.target_node_uuid].sort().join('_')
     const totalCount = edgePairCount[pairKey]
     const currentIndex = edgePairIndex[pairKey] || 0
     edgePairIndex[pairKey] = currentIndex + 1
-    
-    // Check if edge direction matches canonical direction (source UUID < target UUID)
-    const isReversed = e.source_node_uuid > e.target_node_uuid
-    
-    // Calculate curvature: spread multiple edges apart, single edge is straight
+
     let curvature = 0
     if (totalCount > 1) {
-      // Distribute curvature evenly for clear separation
-      // Curvature range increases with edge count
       const curvatureRange = Math.min(1.2, 0.6 + totalCount * 0.15)
       curvature = ((currentIndex / (totalCount - 1)) - 0.5) * curvatureRange * 2
-      
-      // If edge direction is reversed from canonical, flip curvature
-      // This ensures all edges distribute consistently regardless of direction
-      if (isReversed) {
+      if (e.source_node_uuid > e.target_node_uuid) {
         curvature = -curvature
       }
     }
-    
-    edges.push({
+
+    links.push({
       source: e.source_node_uuid,
       target: e.target_node_uuid,
-      type: e.fact_type || e.name || 'RELATED',
       name: e.name || e.fact_type || 'RELATED',
       curvature,
       isSelfLoop: false,
-      pairIndex: currentIndex,
-      pairTotal: totalCount,
       rawData: {
         ...e,
         source_name: nodeMap[e.source_node_uuid]?.name,
@@ -462,354 +632,206 @@ const renderGraph = () => {
       }
     })
   })
-    
-  // Color scale
+
+  // Build color map
   const colorMap = {}
   entityTypes.value.forEach(t => colorMap[t.name] = t.color)
-  const getColor = (type) => colorMap[type] || '#999'
 
-  // Simulation - dynamically adjust node spacing based on edge count
-  const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(edges).id(d => d.id).distance(d => {
-      // Dynamically adjust distance based on edge count between this pair
-      // Base distance 150, each additional edge adds 40
-      const baseDistance = 150
-      const edgeCount = d.pairTotal || 1
-      return baseDistance + (edgeCount - 1) * 50
-    }))
-    .force('charge', d3.forceManyBody().strength(-400))
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collide', d3.forceCollide(50))
-    // Add centering force to keep isolated node groups near center
-    .force('x', d3.forceX(width / 2).strength(0.04))
-    .force('y', d3.forceY(height / 2).strength(0.04))
-  
-  currentSimulation = simulation
-
-  const g = svg.append('g')
-  
-  // Zoom
-  svg.call(d3.zoom().extent([[0, 0], [width, height]]).scaleExtent([0.1, 4]).on('zoom', (event) => {
-    g.attr('transform', event.transform)
-  }))
-
-  // Links - use path elements for curved lines
-  const linkGroup = g.append('g').attr('class', 'links')
-  
-  // Calculate curved path
-  const getLinkPath = (d) => {
-    const sx = d.source.x, sy = d.source.y
-    const tx = d.target.x, ty = d.target.y
-    
-    // Detect self-loop
-    if (d.isSelfLoop) {
-      // Self-loop: draw an arc from node and back
-      const loopRadius = 30
-      // Start from right side of node, loop around and back
-      const x1 = sx + 8  // Start offset
-      const y1 = sy - 4
-      const x2 = sx + 8  // End offset
-      const y2 = sy + 4
-      // Draw self-loop using arc (sweep-flag=1 clockwise)
-      return `M${x1},${y1} A${loopRadius},${loopRadius} 0 1,1 ${x2},${y2}`
-    }
-    
-    if (d.curvature === 0) {
-      // Straight line
-      return `M${sx},${sy} L${tx},${ty}`
-    }
-    
-    // Calculate curve control point - dynamically adjust based on edge count and distance
-    const dx = tx - sx, dy = ty - sy
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    // Perpendicular offset proportional to distance, ensures visible curves
-    // More edges = larger offset ratio
-    const pairTotal = d.pairTotal || 1
-    const offsetRatio = 0.25 + pairTotal * 0.05 // Base 25%, +5% per additional edge
-    const baseOffset = Math.max(35, dist * offsetRatio)
-    const offsetX = -dy / dist * d.curvature * baseOffset
-    const offsetY = dx / dist * d.curvature * baseOffset
-    const cx = (sx + tx) / 2 + offsetX
-    const cy = (sy + ty) / 2 + offsetY
-    
-    return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`
-  }
-  
-  // Calculate curve midpoint (for label positioning)
-  const getLinkMidpoint = (d) => {
-    const sx = d.source.x, sy = d.source.y
-    const tx = d.target.x, ty = d.target.y
-    
-    // Detect self-loop
-    if (d.isSelfLoop) {
-      // Self-loop label position: right of node
-      return { x: sx + 70, y: sy }
-    }
-    
-    if (d.curvature === 0) {
-      return { x: (sx + tx) / 2, y: (sy + ty) / 2 }
-    }
-    
-    // Quadratic Bezier curve midpoint at t=0.5
-    const dx = tx - sx, dy = ty - sy
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    const pairTotal = d.pairTotal || 1
-    const offsetRatio = 0.25 + pairTotal * 0.05
-    const baseOffset = Math.max(35, dist * offsetRatio)
-    const offsetX = -dy / dist * d.curvature * baseOffset
-    const offsetY = dx / dist * d.curvature * baseOffset
-    const cx = (sx + tx) / 2 + offsetX
-    const cy = (sy + ty) / 2 + offsetY
-    
-    // Quadratic Bezier formula B(t) = (1-t)^2*P0 + 2(1-t)t*P1 + t^2*P2, t=0.5
-    const midX = 0.25 * sx + 0.5 * cx + 0.25 * tx
-    const midY = 0.25 * sy + 0.5 * cy + 0.25 * ty
-    
-    return { x: midX, y: midY }
-  }
-  
-  const link = linkGroup.selectAll('path')
-    .data(edges)
-    .enter().append('path')
-    .attr('stroke', 'rgba(255,255,255,0.3)')
-    .attr('stroke-width', 1.5)
-    .attr('fill', 'none')
-    .style('cursor', 'pointer')
-    .on('click', (event, d) => {
-      event.stopPropagation()
-      // Reset previously selected edge styles
-      linkGroup.selectAll('path').attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 1.5)
-      linkLabelBg.attr('fill', 'rgba(0,0,0,0.8)')
-      linkLabels.attr('fill', '#999')
-      // Highlight currently selected edge
-      d3.select(event.target).attr('stroke', '#3498db').attr('stroke-width', 3)
-      
-      selectedItem.value = {
-        type: 'edge',
-        data: d.rawData
-      }
+  // Preload icon textures
+  const iconTextureMap = {}
+  const uniqueTypes = [...new Set(nodes.map(n => n.type))]
+  uniqueTypes.forEach(type => {
+    const iconName = ENTITY_ICON_MAP[type] || 'circle-dot'
+    const color = colorMap[type] || '#999'
+    iconTextureMap[type] = createIconTexture(iconName, color)
+    // Also start loading detailed textures in background
+    createDetailedIconTexture(iconName, color).then(tex => {
+      iconTextureMap[type] = tex
+      if (graphInstance) graphInstance.refresh()
     })
+  })
 
-  // Link labels background (for text readability)
-  const linkLabelBg = linkGroup.selectAll('rect')
-    .data(edges)
-    .enter().append('rect')
-    .attr('fill', 'rgba(0,0,0,0.8)')
-    .attr('rx', 3)
-    .attr('ry', 3)
-    .style('cursor', 'pointer')
-    .style('pointer-events', 'all')
-    .style('display', showEdgeLabels.value ? 'block' : 'none')
-    .on('click', (event, d) => {
-      event.stopPropagation()
-      linkGroup.selectAll('path').attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 1.5)
-      linkLabelBg.attr('fill', 'rgba(0,0,0,0.8)')
-      linkLabels.attr('fill', '#999')
-      // Highlight corresponding edge
-      link.filter(l => l === d).attr('stroke', '#3498db').attr('stroke-width', 3)
-      d3.select(event.target).attr('fill', 'rgba(52, 152, 219, 0.1)')
-      
-      selectedItem.value = {
-        type: 'edge',
-        data: d.rawData
-      }
-    })
+  // Create 3D Force Graph
+  graphInstance = ForceGraph3D()(graphMount.value)
+    .width(width)
+    .height(height)
+    .graphData({ nodes, links })
+    .backgroundColor('#000000')
+    // Node rendering with icon sprites
+    .nodeThreeObject(node => {
+      const color = colorMap[node.type] || '#999'
+      const texture = iconTextureMap[node.type]
 
-  // Link labels
-  const linkLabels = linkGroup.selectAll('text')
-    .data(edges)
-    .enter().append('text')
-    .text(d => d.name)
-    .attr('font-size', '9px')
-    .attr('fill', '#999')
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .style('cursor', 'pointer')
-    .style('pointer-events', 'all')
-    .style('font-family', 'system-ui, sans-serif')
-    .style('display', showEdgeLabels.value ? 'block' : 'none')
-    .on('click', (event, d) => {
-      event.stopPropagation()
-      linkGroup.selectAll('path').attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 1.5)
-      linkLabelBg.attr('fill', 'rgba(0,0,0,0.8)')
-      linkLabels.attr('fill', '#999')
-      // Highlight corresponding edge
-      link.filter(l => l === d).attr('stroke', '#3498db').attr('stroke-width', 3)
-      d3.select(event.target).attr('fill', '#3498db')
-      
-      selectedItem.value = {
-        type: 'edge',
-        data: d.rawData
-      }
-    })
-  
-  // Save refs for external show/hide control
-  linkLabelsRef = linkLabels
-  linkLabelBgRef = linkLabelBg
+      const group = new THREE.Group()
 
-  // Nodes group
-  const nodeGroup = g.append('g').attr('class', 'nodes')
-  
-  // Node circles
-  const node = nodeGroup.selectAll('circle')
-    .data(nodes)
-    .enter().append('circle')
-    .attr('r', 10)
-    .attr('fill', d => getColor(d.type))
-    .attr('stroke', '#fff')
-    .attr('stroke-width', 2.5)
-    .style('cursor', 'pointer')
-    .call(d3.drag()
-      .on('start', (event, d) => {
-        // Only record position, don't restart simulation (distinguish click vs drag)
-        d.fx = d.x
-        d.fy = d.y
-        d._dragStartX = event.x
-        d._dragStartY = event.y
-        d._isDragging = false
+      // Icon sprite
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: texture || createIconTexture('circle-dot', color),
+        transparent: true,
+        opacity: highlightNodes.size > 0 ? (highlightNodes.has(node.id) ? 1 : 0.2) : 0.9,
+        depthWrite: false,
       })
-      .on('drag', (event, d) => {
-        // Detect actual drag start (movement exceeds threshold)
-        const dx = event.x - d._dragStartX
-        const dy = event.y - d._dragStartY
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        
-        if (!d._isDragging && distance > 3) {
-          // First real drag detected, restart simulation
-          d._isDragging = true
-          simulation.alphaTarget(0.3).restart()
-        }
-        
-        if (d._isDragging) {
-          d.fx = event.x
-          d.fy = event.y
+      const sprite = new THREE.Sprite(spriteMaterial)
+      sprite.scale.set(16, 16, 1)
+      group.add(sprite)
+
+      // Text label below node
+      const label = new SpriteText(
+        node.name.length > 12 ? node.name.substring(0, 12) + '…' : node.name
+      )
+      label.color = highlightNodes.size > 0 ? (highlightNodes.has(node.id) ? '#fff' : 'rgba(255,255,255,0.15)') : '#E0E0E0'
+      label.textHeight = 3
+      label.position.set(0, -12, 0)
+      label.fontFace = 'system-ui, sans-serif'
+      label.fontWeight = '500'
+      label.backgroundColor = false
+      group.add(label)
+
+      return group
+    })
+    .nodeLabel(() => '') // We render our own labels
+    // Link styling
+    .linkColor(link => {
+      if (highlightLinks.has(link)) return '#E91E63'
+      return 'rgba(255,255,255,0.2)'
+    })
+    .linkWidth(link => highlightLinks.has(link) ? 2 : 0.5)
+    .linkOpacity(0.6)
+    .linkCurvature(link => link.curvature || 0)
+    .linkCurveRotation(link => link.isSelfLoop ? Math.PI * 0.5 : 0)
+    .linkDirectionalParticles(link => highlightLinks.has(link) ? 4 : 0)
+    .linkDirectionalParticleWidth(2)
+    .linkDirectionalParticleColor(() => '#E91E63')
+    // Link labels
+    .linkThreeObjectExtend(true)
+    .linkThreeObject(link => {
+      if (!showEdgeLabels.value) return null
+      const label = new SpriteText(link.name || '')
+      label.color = 'rgba(255,255,255,0.5)'
+      label.textHeight = 2
+      label.fontFace = 'system-ui, sans-serif'
+      label.backgroundColor = 'rgba(0,0,0,0.6)'
+      label.padding = [1, 2]
+      label.borderRadius = 2
+      return label
+    })
+    .linkPositionUpdate((sprite, { start, end }) => {
+      if (!sprite) return
+      const mid = Object.assign(
+        ...['x', 'y', 'z'].map(c => ({
+          [c]: start[c] + (end[c] - start[c]) / 2
+        }))
+      )
+      Object.assign(sprite.position, mid)
+    })
+    // Interactions
+    .onNodeClick((node) => {
+      highlightNodes.clear()
+      highlightLinks.clear()
+
+      // Highlight this node and connected links
+      highlightNodes.add(node.id)
+      links.forEach(link => {
+        const srcId = typeof link.source === 'object' ? link.source.id : link.source
+        const tgtId = typeof link.target === 'object' ? link.target.id : link.target
+        if (srcId === node.id || tgtId === node.id) {
+          highlightLinks.add(link)
+          highlightNodes.add(srcId)
+          highlightNodes.add(tgtId)
         }
       })
-      .on('end', (event, d) => {
-        // Only let simulation wind down if actually dragged
-        if (d._isDragging) {
-          simulation.alphaTarget(0)
-        }
-        d.fx = null
-        d.fy = null
-        d._isDragging = false
-      })
-    )
-    .on('click', (event, d) => {
-      event.stopPropagation()
-      // Reset all node styles
-      node.attr('stroke', '#fff').attr('stroke-width', 2.5)
-      linkGroup.selectAll('path').attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 1.5)
-      // Highlight selected node
-      d3.select(event.target).attr('stroke', '#E91E63').attr('stroke-width', 4)
-      // Highlight edges connected to this node
-      link.filter(l => l.source.id === d.id || l.target.id === d.id)
-        .attr('stroke', '#E91E63')
-        .attr('stroke-width', 2.5)
-      
+
       selectedItem.value = {
         type: 'node',
-        data: d.rawData,
-        entityType: d.type,
-        color: getColor(d.type)
+        data: node.rawData,
+        entityType: node.type,
+        color: getColor(node.type)
       }
+
+      graphInstance.refresh()
     })
-    .on('mouseenter', (event, d) => {
-      if (!selectedItem.value || selectedItem.value.data?.uuid !== d.rawData.uuid) {
-        d3.select(event.target).attr('stroke', '#CCC').attr('stroke-width', 3)
+    .onNodeHover(node => {
+      graphMount.value.style.cursor = node ? 'pointer' : 'default'
+      hoveredNode = node
+    })
+    .onLinkClick(link => {
+      highlightNodes.clear()
+      highlightLinks.clear()
+      highlightLinks.add(link)
+
+      selectedItem.value = {
+        type: 'edge',
+        data: link.rawData
       }
-    })
-    .on('mouseleave', (event, d) => {
-      if (!selectedItem.value || selectedItem.value.data?.uuid !== d.rawData.uuid) {
-        d3.select(event.target).attr('stroke', '#fff').attr('stroke-width', 2.5)
-      }
-    })
 
-  // Node Labels
-  const nodeLabels = nodeGroup.selectAll('text')
-    .data(nodes)
-    .enter().append('text')
-    .text(d => d.name.length > 8 ? d.name.substring(0, 8) + '…' : d.name)
-    .attr('font-size', '11px')
-    .attr('fill', '#E0E0E0')
-    .attr('font-weight', '500')
-    .attr('dx', 14)
-    .attr('dy', 4)
-    .style('pointer-events', 'none')
-    .style('font-family', 'system-ui, sans-serif')
-
-  simulation.on('tick', () => {
-    // Update curved paths
-    link.attr('d', d => getLinkPath(d))
-    
-    // Update edge label positions (no rotation, horizontal for readability)
-    linkLabels.each(function(d) {
-      const mid = getLinkMidpoint(d)
-      d3.select(this)
-        .attr('x', mid.x)
-        .attr('y', mid.y)
-        .attr('transform', '') // Remove rotation, keep horizontal
+      graphInstance.refresh()
     })
-    
-    // Update edge label backgrounds
-    linkLabelBg.each(function(d, i) {
-      const mid = getLinkMidpoint(d)
-      const textEl = linkLabels.nodes()[i]
-      const bbox = textEl.getBBox()
-      d3.select(this)
-        .attr('x', mid.x - bbox.width / 2 - 4)
-        .attr('y', mid.y - bbox.height / 2 - 2)
-        .attr('width', bbox.width + 8)
-        .attr('height', bbox.height + 4)
-        .attr('transform', '') // Remove rotation
+    .onBackgroundClick(() => {
+      highlightNodes.clear()
+      highlightLinks.clear()
+      selectedItem.value = null
+      graphInstance.refresh()
     })
+    // Force engine config
+    .d3AlphaDecay(0.02)
+    .d3VelocityDecay(0.3)
+    .warmupTicks(80)
+    .cooldownTime(3000)
 
-    node
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y)
+  // Configure forces
+  graphInstance.d3Force('charge').strength(-120)
+  graphInstance.d3Force('link').distance(60)
 
-    nodeLabels
-      .attr('x', d => d.x)
-      .attr('y', d => d.y)
-  })
-  
-  // Click empty area to close detail panel
-  svg.on('click', () => {
-    selectedItem.value = null
-    node.attr('stroke', '#fff').attr('stroke-width', 2.5)
-    linkGroup.selectAll('path').attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 1.5)
-    linkLabelBg.attr('fill', 'rgba(0,0,0,0.8)')
-    linkLabels.attr('fill', '#999')
-  })
+  // Set camera position
+  setTimeout(() => {
+    if (graphInstance) {
+      graphInstance.cameraPosition({ z: 300 })
+    }
+  }, 500)
 }
 
 watch(() => props.graphData, () => {
   nextTick(renderGraph)
 }, { deep: true })
 
-// Watch edge labels toggle
-watch(showEdgeLabels, (newVal) => {
-  if (linkLabelsRef) {
-    linkLabelsRef.style('display', newVal ? 'block' : 'none')
-  }
-  if (linkLabelBgRef) {
-    linkLabelBgRef.style('display', newVal ? 'block' : 'none')
+// Watch edge labels toggle — re-render link objects
+watch(showEdgeLabels, () => {
+  if (graphInstance) {
+    graphInstance.refresh()
   }
 })
 
 const handleResize = () => {
-  nextTick(renderGraph)
+  if (graphInstance && graphContainer.value) {
+    graphInstance.width(graphContainer.value.clientWidth)
+    graphInstance.height(graphContainer.value.clientHeight)
+  }
 }
+
+let resizeObserver = null
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  if (graphContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      handleResize()
+    })
+    resizeObserver.observe(graphContainer.value)
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  if (currentSimulation) {
-    currentSimulation.stop()
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
   }
+  if (graphInstance) {
+    graphInstance._destructor()
+    graphInstance = null
+  }
+  textureCache.forEach((tex) => tex.dispose?.())
+  textureCache.clear()
 })
 </script>
 
@@ -888,10 +910,9 @@ onUnmounted(() => {
   height: 100%;
 }
 
-.graph-view, .graph-svg {
+.graph-mount {
   width: 100%;
   height: 100%;
-  display: block;
 }
 
 .graph-state {
@@ -1211,7 +1232,7 @@ input:checked + .slider:before {
 /* Building hint */
 .graph-building-hint {
   position: absolute;
-  bottom: 160px; /* Moved up from 80px */
+  bottom: 160px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.65);
@@ -1417,5 +1438,177 @@ input:checked + .slider:before {
 .episode-tag.small {
   padding: 3px 6px;
   font-size: 9px;
+}
+
+/* Report Config Section */
+.report-config-section {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.config-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: rgba(123,45,142,0.1);
+  transition: background 0.2s;
+}
+
+.config-section-header:hover {
+  background: rgba(123,45,142,0.2);
+}
+
+.config-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7B2D8E;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.config-toggle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7B2D8E;
+  background: rgba(123,45,142,0.15);
+  border-radius: 4px;
+}
+
+.config-content {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.config-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.config-select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #DDD;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.config-select:focus {
+  border-color: #7B2D8E;
+}
+
+.config-select option {
+  background: #1A1A1A;
+  color: #DDD;
+}
+
+.config-textarea {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #DDD;
+  font-size: 12px;
+  font-family: system-ui, sans-serif;
+  resize: vertical;
+  outline: none;
+  min-height: 60px;
+}
+
+.config-textarea:focus {
+  border-color: #7B2D8E;
+}
+
+.config-textarea::placeholder {
+  color: #555;
+}
+
+.config-add-btn {
+  background: rgba(123,45,142,0.2);
+  border: 1px solid rgba(123,45,142,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  color: #7B2D8E;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.config-add-btn:hover {
+  background: rgba(123,45,142,0.3);
+}
+
+.variable-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.var-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #DDD;
+  font-size: 11px;
+  outline: none;
+}
+
+.var-input:focus {
+  border-color: #7B2D8E;
+}
+
+.var-input::placeholder {
+  color: #555;
+}
+
+.var-key {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.var-value {
+  flex: 1;
+}
+
+.var-remove-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.var-remove-btn:hover {
+  color: #E91E63;
 }
 </style>

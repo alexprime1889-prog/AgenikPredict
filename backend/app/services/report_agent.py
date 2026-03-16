@@ -888,7 +888,9 @@ class ReportAgent:
         simulation_requirement: str,
         llm_client: Optional[LLMClient] = None,
         zep_tools: Optional[ZepToolsService] = None,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        custom_persona: str = '',
+        report_variables: dict = None
     ):
         """
         Initialize Report Agent
@@ -900,11 +902,15 @@ class ReportAgent:
             llm_client: LLM client (optional)
             zep_tools: Zep tools service (optional)
             language: Locale code (e.g. 'en', 'ru') for LLM response language
+            custom_persona: Custom analysis perspective for the report
+            report_variables: Additional parameters to include in prompts
         """
         self.graph_id = graph_id
         self.simulation_id = simulation_id
         self.simulation_requirement = simulation_requirement
         self.language_instruction = get_llm_language_instruction(language)
+        self.custom_persona = custom_persona or ''
+        self.report_variables = report_variables or {}
 
         self.llm = llm_client or LLMClient()
         self.zep_tools = zep_tools or ZepToolsService()
@@ -919,6 +925,21 @@ class ReportAgent:
         
         logger.info(f"ReportAgent initialized: graph_id={graph_id}, simulation_id={simulation_id}")
     
+    def _build_variables_context(self) -> str:
+        """Format report_variables into a prompt section."""
+        if not self.report_variables:
+            return ''
+        lines = ['\n[Report Parameters]']
+        for key, value in self.report_variables.items():
+            lines.append(f'- {key}: {value}')
+        return '\n'.join(lines)
+
+    def _build_persona_prefix(self) -> str:
+        """Return the custom persona as a prompt prefix."""
+        if not self.custom_persona:
+            return ''
+        return f'\n[Custom Analysis Perspective]\n{self.custom_persona}\n'
+
     def _define_tools(self) -> Dict[str, Dict[str, Any]]:
         """Define available tools"""
         return {
@@ -1166,7 +1187,7 @@ class ReportAgent:
         if progress_callback:
             progress_callback("planning", 30, "Generating report outline...")
         
-        system_prompt = PLAN_SYSTEM_PROMPT + self.language_instruction
+        system_prompt = self._build_persona_prefix() + PLAN_SYSTEM_PROMPT + self._build_variables_context() + self.language_instruction
         user_prompt = PLAN_USER_PROMPT_TEMPLATE.format(
             simulation_requirement=self.simulation_requirement,
             total_nodes=context.get('graph_statistics', {}).get('total_nodes', 0),
@@ -1255,13 +1276,14 @@ class ReportAgent:
         if self.report_logger:
             self.report_logger.log_section_start(section.title, section_index)
         
-        system_prompt = SECTION_SYSTEM_PROMPT_TEMPLATE.format(
+        formatted_template = SECTION_SYSTEM_PROMPT_TEMPLATE.format(
             report_title=outline.title,
             report_summary=outline.summary,
             simulation_requirement=self.simulation_requirement,
             section_title=section.title,
             tools_description=self._get_tools_description(),
-        ) + self.language_instruction
+        )
+        system_prompt = self._build_persona_prefix() + formatted_template + self._build_variables_context() + self.language_instruction
 
         # Build user prompt - each completed section passes in max 4000 chars
         if previous_sections:
@@ -1804,11 +1826,12 @@ class ReportAgent:
         except Exception as e:
             logger.warning(f"Failed to get report content: {e}")
         
-        system_prompt = CHAT_SYSTEM_PROMPT_TEMPLATE.format(
+        formatted_template = CHAT_SYSTEM_PROMPT_TEMPLATE.format(
             simulation_requirement=self.simulation_requirement,
             report_content=report_content if report_content else "(No report available yet)",
             tools_description=self._get_tools_description(),
-        ) + self.language_instruction
+        )
+        system_prompt = self._build_persona_prefix() + formatted_template + self._build_variables_context() + self.language_instruction
 
         # Build messages
         messages = [{"role": "system", "content": system_prompt}]
