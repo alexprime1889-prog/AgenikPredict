@@ -32,7 +32,14 @@ const languages = [
   { code: 'he', label: 'עברית' },
   { code: 'ru', label: 'Русский' },
   { code: 'es', label: 'Español' },
-  { code: 'de', label: 'Deutsch' }
+  { code: 'de', label: 'Deutsch' },
+  { code: 'fr', label: 'Français' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'pt', label: 'Português' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'ar', label: 'العربية' }
 ]
 
 const currentLocale = computed(() => locale.value)
