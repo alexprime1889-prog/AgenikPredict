@@ -86,3 +86,11 @@ LANDING_PAGE_COPY.md
 LANDING_i18n_*.json
 *.docx
 agenikpredict-video/
+
+# Claude/AI agent files
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md
+.claude/
+**/.claude/
