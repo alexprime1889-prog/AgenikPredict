@@ -11,6 +11,7 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY frontend/ ./
+ENV VITE_API_BASE_URL=""
 RUN npm run build
 
 # ---------------------------------------------------------------------------
