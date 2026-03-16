@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Create axios instance
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
   timeout: 300000, // 5-minute timeout (ontology generation may take a long time)
   headers: {
     'Content-Type': 'application/json'
@@ -15,6 +15,12 @@ service.interceptors.request.use(
     // Pass the user's selected locale to the backend for LLM language support
     const locale = localStorage.getItem('agenikpredict-locale') || 'en'
     config.headers['Accept-Language'] = locale
+
+    // Attach JWT token if available
+    const token = localStorage.getItem('agenikpredict-token')
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
     return config
   },
   error => {
