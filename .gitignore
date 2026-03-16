@@ -73,3 +73,16 @@ agenikpredict-video-assets/
 PLAN_*.md
 *.docx
 *.doc
+
+# Internal plans and business documents
+PLAN_*.md
+*_Analysis_*.md
+*_Marketing_*.md
+*_Strategy*.*
+*_CHECKLIST*.*
+MODIFICATIONS.md
+ROADMAP.md
+LANDING_PAGE_COPY.md
+LANDING_i18n_*.json
+*.docx
+agenikpredict-video/
