@@ -21,6 +21,8 @@ dependencies = [
     { name = "pydantic" },
     { name = "pymupdf" },
     { name = "python-dotenv" },
+    { name = "reticker" },
+    { name = "twelvedata" },
     { name = "zep-cloud" },
 ]
 
@@ -52,6 +54,8 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "reticker", specifier = ">=3.1.6" },
+    { name = "twelvedata", specifier = ">=1.2.28" },
     { name = "zep-cloud", specifier = "==3.13.0" },
 ]
 provides-extras = ["dev"]
@@ -2174,6 +2178,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pytimeparse"
+version = "1.1.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/5d/231f5f33c81e09682708fb323f9e4041408d8223e2f0fb9742843328778f/pytimeparse-1.1.8.tar.gz", hash = "sha256:e86136477be924d7e670646a98561957e8ca7308d44841e21f5ddea757556a0a", size = 9403, upload-time = "2018-05-18T17:40:42.76Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1b/b4/afd75551a3b910abd1d922dbd45e49e5deeb4d47dc50209ce489ba9844dd/pytimeparse-1.1.8-py2.py3-none-any.whl", hash = "sha256:04b7be6cc8bd9f5647a6325444926c3ac34ee6bc7e69da4367ba282f076036bd", size = 9969, upload-time = "2018-05-18T17:40:41.28Z" },
+]
+
+[[package]]
 name = "pytz"
 version = "2025.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2537,6 +2550,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
+]
+
+[[package]]
+name = "reticker"
+version = "3.1.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a8/4f/24ff5e1f962866af2048fee530ccf2435ced60113115472581001c7a5032/reticker-3.1.6.tar.gz", hash = "sha256:b23bc5bf98ad881312b19718b4c315a46c0881056c0d931876119125b1c86e7b", size = 17767, upload-time = "2022-12-20T13:58:57.952Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/21/81/e5ebe921437165840f3ae93e6447a17d60c0d2cf4b4e2582055eb3f1e9b4/reticker-3.1.6-py3-none-any.whl", hash = "sha256:0762751b6db53d0cb572ec1402a657dd6fd52cafb2d1fcd084fe7c211026ce70", size = 17631, upload-time = "2022-12-20T13:58:56.662Z" },
 ]
 
 [[package]]
@@ -3196,6 +3218,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/37/92/e97fcc6b2c27cdb87ce5ee063d77f8f26f19f06916aa680464c8104ef0f6/triton-3.5.1-cp313-cp313t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0b4d2c70127fca6a23e247f9348b8adde979d2e7a20391bfbabaac6aebc7e6a8", size = 170579924, upload-time = "2025-11-11T17:41:12.455Z" },
     { url = "https://files.pythonhosted.org/packages/a4/e6/c595c35e5c50c4bc56a7bac96493dad321e9e29b953b526bbbe20f9911d0/triton-3.5.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d0637b1efb1db599a8e9dc960d53ab6e4637db7d4ab6630a0974705d77b14b60", size = 170480488, upload-time = "2025-11-11T17:41:18.222Z" },
     { url = "https://files.pythonhosted.org/packages/16/b5/b0d3d8b901b6a04ca38df5e24c27e53afb15b93624d7fd7d658c7cd9352a/triton-3.5.1-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:bac7f7d959ad0f48c0e97d6643a1cc0fd5786fe61cb1f83b537c6b2d54776478", size = 170582192, upload-time = "2025-11-11T17:41:23.963Z" },
+]
+
+[[package]]
+name = "twelvedata"
+version = "1.2.28"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytimeparse" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c7/39/9c0ef5552c6813c1b88acb5a38e3e7767aaf1db1f2dcd3143d3ff8ec5897/twelvedata-1.2.28.tar.gz", hash = "sha256:97d2a3cf1714f556ef25ff6e146c70a1fbf8f35da8620daecebf5450b35fad06", size = 13053360, upload-time = "2026-01-26T14:25:35.005Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/aa/a6a7f575e46371e8c949b63388f3545b73f5ac7be82625b8dd548b9f947c/twelvedata-1.2.28-py3-none-any.whl", hash = "sha256:cc62bbd3906b775079c20beb2fb590a097e00dcf8fa4be0397817c844b7f5ab0", size = 46808, upload-time = "2026-01-26T14:25:32.716Z" },
 ]
 
 [[package]]

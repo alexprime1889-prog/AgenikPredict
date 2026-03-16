@@ -62,11 +62,21 @@ def create_app(config_class=Config):
         logger.debug(f"Response: {response.status_code}")
         return response
     
+    # Initialize user database and seed accounts
+    from .models.user import init_db, seed_admin, seed_demo
+    init_db()
+    seed_admin()
+    seed_demo()
+    if should_log_startup:
+        logger.info("User database initialized, admin and demo accounts seeded")
+
     # Register blueprints
-    from .api import graph_bp, simulation_bp, report_bp
+    from .api import graph_bp, simulation_bp, report_bp, auth_bp, market_bp
     app.register_blueprint(graph_bp, url_prefix='/api/graph')
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(market_bp, url_prefix='/api/market')
     
     # Health check
     @app.route('/health')

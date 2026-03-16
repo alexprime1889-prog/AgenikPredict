@@ -24,6 +24,12 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'agenikpredict-secret-key')
     DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
 
+    # Auth config
+    JWT_SECRET = os.environ.get('JWT_SECRET', SECRET_KEY)
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+    RESEND_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL', 'AgenikPredict <noreply@agenikpredict.com>')
+    APP_URL = os.environ.get('APP_URL', 'http://localhost:3000')
+
     # JSON config - disable ASCII escaping for proper Unicode display
     JSON_AS_ASCII = False
 
@@ -71,6 +77,9 @@ class Config:
     REPORT_AGENT_MAX_TOOL_CALLS = int(os.environ.get('REPORT_AGENT_MAX_TOOL_CALLS', '5'))
     REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '2'))
     REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.5'))
+
+    # Market data config
+    TWELVE_DATA_API_KEY = os.environ.get('TWELVE_DATA_API_KEY')
 
     @classmethod
     def validate(cls):
