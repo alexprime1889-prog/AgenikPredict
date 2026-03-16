@@ -19,7 +19,7 @@ from datetime import datetime
 from enum import Enum
 
 from ..config import Config
-from ..utils.llm_client import LLMClient
+from ..utils.llm_client import LLMClient, UsageAccumulator
 from ..utils.logger import get_logger
 from ..utils.locale import get_llm_language_instruction
 from .zep_tools import (
@@ -451,7 +451,8 @@ class Report:
     created_at: str = ""
     completed_at: str = ""
     error: Optional[str] = None
-    
+    usage: Optional[Dict[str, int]] = None
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "report_id": self.report_id,
@@ -463,7 +464,8 @@ class Report:
             "markdown_content": self.markdown_content,
             "created_at": self.created_at,
             "completed_at": self.completed_at,
-            "error": self.error
+            "error": self.error,
+            "usage": self.usage,
         }
 
 
@@ -914,10 +916,11 @@ class ReportAgent:
 
         self.llm = llm_client or LLMClient()
         self.zep_tools = zep_tools or ZepToolsService()
-        
+        self.usage = UsageAccumulator()
+
         # Tool definitions
         self.tools = self._define_tools()
-        
+
         # Logger (initialized in generate_report)
         self.report_logger: Optional[ReportLogger] = None
         # Console logger (initialized in generate_report)
@@ -1198,14 +1201,15 @@ class ReportAgent:
         )
 
         try:
-            response = self.llm.chat_json(
+            response, _usage = self.llm.chat_json(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3
             )
-            
+            self.usage.add(_usage)
+
             if progress_callback:
                 progress_callback("planning", 80, "Parsing outline structure...")
             
@@ -1326,11 +1330,12 @@ class ReportAgent:
                 )
             
             # Call LLM
-            response = self.llm.chat(
+            response, _usage = self.llm.chat(
                 messages=messages,
                 temperature=0.5,
                 max_tokens=4096
             )
+            self.usage.add(_usage)
 
             # Check if LLM returned None (API exception or empty content)
             if response is None:
@@ -1529,11 +1534,12 @@ class ReportAgent:
         logger.warning(f"Section {section.title} reached max iterations, force generating")
         messages.append({"role": "user", "content": REACT_FORCE_FINAL_MSG})
         
-        response = self.llm.chat(
+        response, _usage = self.llm.chat(
             messages=messages,
             temperature=0.5,
             max_tokens=4096
         )
+        self.usage.add(_usage)
 
         # Check if LLM returned None during forced conclusion
         if response is None:
@@ -1755,12 +1761,16 @@ class ReportAgent:
                 progress_callback("completed", 100, "Report generation complete")
             
             logger.info(f"Report generation complete: {report_id}")
-            
+            logger.info(f"Total LLM usage: {self.usage.to_dict()}")
+
+            # Store usage metadata on report
+            report.usage = self.usage.to_dict()
+
             # Close console logger
             if self.console_logger:
                 self.console_logger.close()
                 self.console_logger = None
-            
+
             return report
             
         except Exception as e:
@@ -1851,11 +1861,12 @@ class ReportAgent:
         max_iterations = 2  # Reduced iteration rounds
         
         for iteration in range(max_iterations):
-            response = self.llm.chat(
+            response, _usage = self.llm.chat(
                 messages=messages,
                 temperature=0.5
             )
-            
+            self.usage.add(_usage)
+
             # Parse tool call
             tool_calls = self._parse_tool_calls(response)
             
@@ -1891,11 +1902,12 @@ class ReportAgent:
             })
         
         # Max iterations reached, get final response
-        final_response = self.llm.chat(
+        final_response, _usage = self.llm.chat(
             messages=messages,
             temperature=0.5
         )
-        
+        self.usage.add(_usage)
+
         # Clean response
         clean_response = re.sub(r'<tool_call>.*?</tool_call>', '', final_response, flags=re.DOTALL)
         clean_response = re.sub(r'\[TOOL_CALL\].*?\)', '', clean_response)

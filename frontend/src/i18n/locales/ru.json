@@ -384,5 +384,18 @@
   "auth.redirecting": "Перенаправляем в AgenikPredict...",
   "auth.logout": "Выйти",
 
-  "console.enrichMarketData": "Обогатить данными рынка в реальном времени"
+  "console.enrichMarketData": "Обогатить данными рынка в реальном времени",
+
+  "billing.balance": "Баланс",
+  "billing.trialDaysLeft": "Осталось {days} дней пробного периода",
+  "billing.trialExpired": "Пробный период истёк",
+  "billing.topUp": "Пополнить баланс",
+  "billing.estimatedCost": "Ориентировочная стоимость",
+  "billing.reportCost": "Стоимость отчёта",
+  "billing.tokens": "токены",
+  "billing.insufficientBalance": "Недостаточно средств. Пополните баланс для продолжения.",
+  "billing.usageHistory": "История использования",
+  "billing.freeTrialBadge": "Бесплатно (пробный)",
+  "billing.estimatedReportCost": "Ориентировочно ~$1-2 за отчёт",
+  "billing.addCreditsToGenerate": "Пополните баланс для генерации"
 }

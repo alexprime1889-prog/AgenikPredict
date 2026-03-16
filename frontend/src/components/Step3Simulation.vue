@@ -91,13 +91,22 @@
       </div>
 
       <div class="action-controls">
-        <button 
+        <span v-if="billingTrialActive" class="cost-badge trial-badge">
+          {{ $t('billing.freeTrialBadge') }}
+        </span>
+        <span v-else-if="billingCanGenerate" class="cost-badge estimate-badge">
+          {{ $t('billing.estimatedReportCost') }}
+        </span>
+        <span v-else class="cost-badge insufficient-badge">
+          {{ $t('billing.addCreditsToGenerate') }}
+        </span>
+        <button
           class="action-btn primary"
-          :disabled="phase !== 2 || isGeneratingReport"
+          :disabled="phase !== 2 || isGeneratingReport || !billingCanGenerate"
           @click="handleNextStep"
         >
           <span v-if="isGeneratingReport" class="loading-spinner-small"></span>
-          {{ isGeneratingReport ? $t('step3.starting') : $t('step3.generateReport') }} 
+          {{ isGeneratingReport ? $t('step3.starting') : $t('step3.generateReport') }}
           <span v-if="!isGeneratingReport" class="arrow-icon">→</span>
         </button>
       </div>
@@ -296,6 +305,7 @@ import {
   getRunStatusDetail
 } from '../api/simulation'
 import { generateReport } from '../api/report'
+import { isTrialActive as billingTrialActive, canGenerate as billingCanGenerate } from '../store/auth'
 
 const props = defineProps({
   simulationId: String,
@@ -884,6 +894,32 @@ onUnmounted(() => {
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.cost-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.cost-badge.trial-badge {
+  background: rgba(123, 45, 142, 0.15);
+  color: #7B2D8E;
+  border: 1px solid rgba(123, 45, 142, 0.25);
+}
+
+.cost-badge.estimate-badge {
+  background: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+  border: 1px solid rgba(39, 174, 96, 0.25);
+}
+
+.cost-badge.insufficient-badge {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.25);
 }
 
 .action-btn.primary {

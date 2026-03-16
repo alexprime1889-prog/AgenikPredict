@@ -384,5 +384,18 @@
   "auth.redirecting": "...מעבירים ל-AgenikPredict",
   "auth.logout": "התנתקות",
 
-  "console.enrichMarketData": "העשרה בנתוני שוק בזמן אמת"
+  "console.enrichMarketData": "העשרה בנתוני שוק בזמן אמת",
+
+  "billing.balance": "יתרה",
+  "billing.trialDaysLeft": "נותרו {days} ימים בתקופת הניסיון",
+  "billing.trialExpired": "תקופת הניסיון הסתיימה",
+  "billing.topUp": "הוספת קרדיטים",
+  "billing.estimatedCost": "עלות משוערת",
+  "billing.reportCost": "עלות דוח",
+  "billing.tokens": "טוקנים",
+  "billing.insufficientBalance": "יתרה לא מספיקה. אנא הוסיפו קרדיטים כדי להמשיך.",
+  "billing.usageHistory": "היסטוריית שימוש",
+  "billing.freeTrialBadge": "חינם (ניסיון)",
+  "billing.estimatedReportCost": "עלות משוערת ~$1-2 לדוח",
+  "billing.addCreditsToGenerate": "הוסיפו קרדיטים כדי ליצור"
 }

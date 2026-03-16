@@ -385,5 +385,18 @@
   "auth.redirecting": "Redirection vers AgenikPredict...",
   "auth.logout": "Se déconnecter",
 
-  "console.enrichMarketData": "Enrichir avec des données de marché en direct"
+  "console.enrichMarketData": "Enrichir avec des données de marché en direct",
+
+  "billing.balance": "Solde",
+  "billing.trialDaysLeft": "{days} jours restants d'essai",
+  "billing.trialExpired": "Essai expire",
+  "billing.topUp": "Ajouter des credits",
+  "billing.estimatedCost": "Cout estime",
+  "billing.reportCost": "Cout du rapport",
+  "billing.tokens": "jetons",
+  "billing.insufficientBalance": "Solde insuffisant. Veuillez ajouter des credits pour continuer.",
+  "billing.usageHistory": "Historique d'utilisation",
+  "billing.freeTrialBadge": "Gratuit (Essai)",
+  "billing.estimatedReportCost": "Estime ~1-2 $ par rapport",
+  "billing.addCreditsToGenerate": "Ajoutez des credits pour generer"
 }

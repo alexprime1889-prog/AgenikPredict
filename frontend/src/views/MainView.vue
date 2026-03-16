@@ -22,7 +22,7 @@
 
       <div class="header-right">
         <div class="workflow-step">
-          <span class="step-num">Step {{ currentStep }}/5</span>
+          <span class="step-num">{{ $t('status.stepOf', { current: currentStep, total: 5 }) }}</span>
           <span class="step-name">{{ stepNames[currentStep - 1] }}</span>
         </div>
         <div class="step-divider"></div>
@@ -30,6 +30,11 @@
           <span class="dot"></span>
           {{ statusText }}
         </span>
+        <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Light mode' : 'Dark mode'">
+          <svg v-if="isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <BillingBadge />
         <LanguageSwitcher />
       </div>
     </header>
@@ -83,12 +88,27 @@ import GraphPanel from '../components/GraphPanel.vue'
 import Step1GraphBuild from '../components/Step1GraphBuild.vue'
 import Step2EnvSetup from '../components/Step2EnvSetup.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import BillingBadge from '../components/BillingBadge.vue'
 import { generateOntology, getProject, buildGraph, getTaskStatus, getGraphData } from '../api/graph'
 import { getPendingUpload, clearPendingUpload } from '../store/pendingUpload'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+
+// Theme
+const isDark = ref(false)
+const initTheme = () => {
+  const saved = localStorage.getItem('agenikpredict-theme')
+  isDark.value = saved === 'dark'
+  document.documentElement.classList.toggle('dark', isDark.value)
+}
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('agenikpredict-theme', isDark.value ? 'dark' : 'light')
+}
+initTheme()
 
 // Layout State
 const viewMode = ref('split') // graph | split | workbench
@@ -121,15 +141,15 @@ let graphPollTimer = null
 
 // --- Computed Layout Styles ---
 const leftPanelStyle = computed(() => {
-  if (viewMode.value === 'graph') return { width: '100%', opacity: 1, transform: 'translateX(0)' }
-  if (viewMode.value === 'workbench') return { width: '0%', opacity: 0, transform: 'translateX(-20px)' }
-  return { width: '50%', opacity: 1, transform: 'translateX(0)' }
+  if (viewMode.value === 'graph') return { flex: '1 0 100%', maxWidth: '100%', opacity: 1, transform: 'translateX(0)', overflow: 'hidden' }
+  if (viewMode.value === 'workbench') return { flex: '0 0 0%', maxWidth: '0', opacity: 0, transform: 'translateX(-20px)', overflow: 'hidden', pointerEvents: 'none' }
+  return { flex: '1 0 50%', maxWidth: '50%', opacity: 1, transform: 'translateX(0)', overflow: 'hidden' }
 })
 
 const rightPanelStyle = computed(() => {
-  if (viewMode.value === 'workbench') return { width: '100%', opacity: 1, transform: 'translateX(0)' }
-  if (viewMode.value === 'graph') return { width: '0%', opacity: 0, transform: 'translateX(20px)' }
-  return { width: '50%', opacity: 1, transform: 'translateX(0)' }
+  if (viewMode.value === 'workbench') return { flex: '1 0 100%', maxWidth: '100%', opacity: 1, transform: 'translateX(0)', overflow: 'hidden' }
+  if (viewMode.value === 'graph') return { flex: '0 0 0%', maxWidth: '0', opacity: 0, transform: 'translateX(20px)', overflow: 'hidden', pointerEvents: 'none' }
+  return { flex: '1 0 50%', maxWidth: '50%', opacity: 1, transform: 'translateX(0)', overflow: 'hidden' }
 })
 
 // --- Status Computed ---
@@ -140,11 +160,11 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (error.value) return 'Error'
-  if (currentPhase.value >= 2) return 'Ready'
-  if (currentPhase.value === 1) return 'Building Graph'
-  if (currentPhase.value === 0) return 'Generating Ontology'
-  return 'Initializing'
+  if (error.value) return t('status.error') || 'Error'
+  if (currentPhase.value >= 2) return t('status.ready')
+  if (currentPhase.value === 1) return t('step1.building')
+  if (currentPhase.value === 0) return t('step1.generating')
+  return t('console.initializing')
 })
 
 // --- Helpers ---
@@ -494,6 +514,30 @@ onUnmounted(() => {
   gap: 16px;
 }
 
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.theme-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .workflow-step {
   display: flex;
   align-items: center;
@@ -541,9 +585,9 @@ onUnmounted(() => {
 
 .panel-wrapper {
   height: 100%;
-  overflow: hidden;
-  transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, transform 0.3s ease;
-  will-change: width, opacity, transform;
+  min-width: 0;
+  transition: flex 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), max-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, transform 0.3s ease;
+  will-change: flex, max-width, opacity, transform;
 }
 
 .panel-wrapper.left {

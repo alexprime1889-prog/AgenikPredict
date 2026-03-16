@@ -1120,14 +1120,14 @@ Please decompose the following question into {max_queries} sub-questions:
 Return the sub-question list in JSON format."""
 
         try:
-            response = self.llm.chat_json(
+            response, _ = self.llm.chat_json(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3
             )
-            
+
             sub_queries = response.get("sub_queries", [])
             # Ensure it is a list of strings
             return [str(sq) for sq in sub_queries[:max_queries]]
@@ -1603,14 +1603,14 @@ Available Agent list (total {len(agent_summaries)}):
 Please select up to {max_agents} most suitable Agents for interview and explain your reasoning."""
 
         try:
-            response = self.llm.chat_json(
+            response, _ = self.llm.chat_json(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3
             )
-            
+
             selected_indices = response.get("selected_indices", [])[:max_agents]
             reasoning = response.get("reasoning", "Automatically selected based on relevance")
             
@@ -1662,7 +1662,7 @@ Interviewee roles: {', '.join(agent_roles)}
 Please generate 3-5 interview questions."""
 
         try:
-            response = self.llm.chat_json(
+            response, _ = self.llm.chat_json(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -1719,7 +1719,7 @@ Interview content:
 Please generate an interview summary."""
 
         try:
-            summary = self.llm.chat(
+            summary, _ = self.llm.chat(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

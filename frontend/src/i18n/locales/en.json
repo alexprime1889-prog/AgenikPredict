@@ -385,5 +385,18 @@
   "auth.redirecting": "Redirecting to AgenikPredict...",
   "auth.logout": "Sign out",
 
-  "console.enrichMarketData": "Enrich with live market data"
+  "console.enrichMarketData": "Enrich with live market data",
+
+  "billing.balance": "Balance",
+  "billing.trialDaysLeft": "{days} days left in trial",
+  "billing.trialExpired": "Trial expired",
+  "billing.topUp": "Add Credits",
+  "billing.estimatedCost": "Estimated cost",
+  "billing.reportCost": "Report cost",
+  "billing.tokens": "tokens",
+  "billing.insufficientBalance": "Insufficient balance. Please add credits to continue.",
+  "billing.usageHistory": "Usage History",
+  "billing.freeTrialBadge": "Free (Trial)",
+  "billing.estimatedReportCost": "Estimated ~$1-2 per report",
+  "billing.addCreditsToGenerate": "Add credits to generate"
 }

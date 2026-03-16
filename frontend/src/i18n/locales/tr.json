@@ -385,5 +385,18 @@
   "auth.redirecting": "AGENIKPREDICT'e yönlendiriliyorsunuz...",
   "auth.logout": "Çıkış yap",
 
-  "console.enrichMarketData": "Canlı piyasa verileriyle zenginleştir"
+  "console.enrichMarketData": "Canlı piyasa verileriyle zenginleştir",
+
+  "billing.balance": "Bakiye",
+  "billing.trialDaysLeft": "Deneme süresinde {days} gün kaldı",
+  "billing.trialExpired": "Deneme süresi doldu",
+  "billing.topUp": "Kredi ekle",
+  "billing.estimatedCost": "Tahmini maliyet",
+  "billing.reportCost": "Rapor maliyeti",
+  "billing.tokens": "token",
+  "billing.insufficientBalance": "Yetersiz bakiye. Devam etmek için kredi ekleyin.",
+  "billing.usageHistory": "Kullanım geçmişi",
+  "billing.freeTrialBadge": "Ücretsiz (Deneme)",
+  "billing.estimatedReportCost": "Tahmini rapor başına ~$1-2",
+  "billing.addCreditsToGenerate": "Oluşturmak için kredi ekleyin"
 }

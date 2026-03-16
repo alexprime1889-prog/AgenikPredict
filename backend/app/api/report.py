@@ -6,7 +6,7 @@ Provides simulation report generation, retrieval, and conversation endpoints
 import os
 import traceback
 import threading
-from flask import request, jsonify, send_file
+from flask import request, jsonify, send_file, g
 
 from . import report_bp
 from ..config import Config
@@ -14,6 +14,8 @@ from ..services.report_agent import ReportAgent, ReportManager, ReportStatus
 from ..services.simulation_manager import SimulationManager
 from ..models.project import ProjectManager
 from ..models.task import TaskManager, TaskStatus
+from ..models.user import get_user_billing_status
+from .auth import optional_auth
 from ..utils.logger import get_logger
 
 logger = get_logger('agenikpredict.api.report')
@@ -22,19 +24,20 @@ logger = get_logger('agenikpredict.api.report')
 # ============== Report Generation API ==============
 
 @report_bp.route('/generate', methods=['POST'])
+@optional_auth
 def generate_report():
     """
     Generate simulation analysis report (async task)
-    
+
     This is a time-consuming operation. The endpoint returns task_id immediately,
     use GET /api/report/generate/status to query progress
-    
+
     Request (JSON):
         {
             "simulation_id": "sim_xxxx",    // required, simulation ID
             "force_regenerate": false        // optional, force regeneration
         }
-    
+
     Returns:
         {
             "success": true,
@@ -47,8 +50,20 @@ def generate_report():
         }
     """
     try:
+        # Check billing status if user is authenticated
+        user_id = getattr(g, 'user_id', None)
+        if user_id:
+            status = get_user_billing_status(user_id)
+            if not status['can_generate']:
+                return jsonify({
+                    "success": False,
+                    "error": "trial_expired",
+                    "message": "Your free trial has ended. Please add credits to continue generating reports.",
+                    "billing_status": status
+                }), 402
+
         data = request.get_json() or {}
-        
+
         simulation_id = data.get('simulation_id')
         if not simulation_id:
             return jsonify({

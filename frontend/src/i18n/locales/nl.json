@@ -385,5 +385,18 @@
   "auth.redirecting": "Doorverwijzen naar AgenikPredict...",
   "auth.logout": "Uitloggen",
 
-  "console.enrichMarketData": "Verrijken met live marktgegevens"
+  "console.enrichMarketData": "Verrijken met live marktgegevens",
+
+  "billing.balance": "Saldo",
+  "billing.trialDaysLeft": "{days} dagen proefperiode resterend",
+  "billing.trialExpired": "Proefperiode verlopen",
+  "billing.topUp": "Tegoed opwaarderen",
+  "billing.estimatedCost": "Geschatte kosten",
+  "billing.reportCost": "Rapportkosten",
+  "billing.tokens": "tokens",
+  "billing.insufficientBalance": "Onvoldoende saldo. Voeg tegoed toe om door te gaan.",
+  "billing.usageHistory": "Gebruiksgeschiedenis",
+  "billing.freeTrialBadge": "Gratis (Proef)",
+  "billing.estimatedReportCost": "Geschat ~$1-2 per rapport",
+  "billing.addCreditsToGenerate": "Voeg tegoed toe om te genereren"
 }

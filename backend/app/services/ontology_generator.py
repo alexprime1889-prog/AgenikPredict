@@ -205,12 +205,12 @@ class OntologyGenerator:
         ]
         
         # Call LLM
-        result = self.llm_client.chat_json(
+        result, _ = self.llm_client.chat_json(
             messages=messages,
             temperature=0.3,
             max_tokens=4096
         )
-        
+
         # Validate and post-process
         result = self._validate_and_process(result)
         

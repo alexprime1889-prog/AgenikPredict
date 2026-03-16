@@ -385,5 +385,18 @@
   "auth.redirecting": "جارٍ إعادة التوجيه إلى AgenikPredict...",
   "auth.logout": "تسجيل الخروج",
 
-  "console.enrichMarketData": "إثراء ببيانات السوق الحية"
+  "console.enrichMarketData": "إثراء ببيانات السوق الحية",
+
+  "billing.balance": "الرصيد",
+  "billing.trialDaysLeft": "متبقي {days} أيام من الفترة التجريبية",
+  "billing.trialExpired": "انتهت الفترة التجريبية",
+  "billing.topUp": "إضافة رصيد",
+  "billing.estimatedCost": "التكلفة التقديرية",
+  "billing.reportCost": "تكلفة التقرير",
+  "billing.tokens": "رموز",
+  "billing.insufficientBalance": "رصيد غير كافٍ. يرجى إضافة رصيد للمتابعة.",
+  "billing.usageHistory": "سجل الاستخدام",
+  "billing.freeTrialBadge": "مجاني (تجريبي)",
+  "billing.estimatedReportCost": "تقديريًا ~$1-2 لكل تقرير",
+  "billing.addCreditsToGenerate": "أضف رصيدًا للإنشاء"
 }

@@ -385,5 +385,18 @@
   "auth.redirecting": "Reindirizzamento ad AgenikPredict...",
   "auth.logout": "Esci",
 
-  "console.enrichMarketData": "Arricchisci con dati di mercato in tempo reale"
+  "console.enrichMarketData": "Arricchisci con dati di mercato in tempo reale",
+
+  "billing.balance": "Saldo",
+  "billing.trialDaysLeft": "{days} giorni di prova rimasti",
+  "billing.trialExpired": "Prova scaduta",
+  "billing.topUp": "Aggiungi crediti",
+  "billing.estimatedCost": "Costo stimato",
+  "billing.reportCost": "Costo del rapporto",
+  "billing.tokens": "token",
+  "billing.insufficientBalance": "Saldo insufficiente. Aggiungi crediti per continuare.",
+  "billing.usageHistory": "Cronologia utilizzo",
+  "billing.freeTrialBadge": "Gratuito (Prova)",
+  "billing.estimatedReportCost": "Stimato ~$1-2 per rapporto",
+  "billing.addCreditsToGenerate": "Aggiungi crediti per generare"
 }

@@ -384,5 +384,18 @@
   "auth.redirecting": "Weiterleitung zu AgenikPredict...",
   "auth.logout": "Abmelden",
 
-  "console.enrichMarketData": "Mit Live-Marktdaten anreichern"
+  "console.enrichMarketData": "Mit Live-Marktdaten anreichern",
+
+  "billing.balance": "Guthaben",
+  "billing.trialDaysLeft": "{days} Tage Testphase verbleibend",
+  "billing.trialExpired": "Testphase abgelaufen",
+  "billing.topUp": "Guthaben aufladen",
+  "billing.estimatedCost": "Geschatzte Kosten",
+  "billing.reportCost": "Berichtskosten",
+  "billing.tokens": "Token",
+  "billing.insufficientBalance": "Unzureichendes Guthaben. Bitte laden Sie Guthaben auf, um fortzufahren.",
+  "billing.usageHistory": "Nutzungsverlauf",
+  "billing.freeTrialBadge": "Kostenlos (Testphase)",
+  "billing.estimatedReportCost": "Geschatzt ~$1-2 pro Bericht",
+  "billing.addCreditsToGenerate": "Guthaben aufladen zum Generieren"
 }

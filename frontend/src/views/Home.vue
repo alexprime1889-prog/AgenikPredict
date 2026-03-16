@@ -7,6 +7,7 @@
       <div class="nav-brand">{{ $t('brand') }}</div>
       <div class="nav-links">
         <span v-if="userEmail" class="nav-user">{{ userEmail }}</span>
+        <BillingBadge />
         <LanguageSwitcher />
         <button v-if="isLoggedIn" class="nav-logout" @click="handleLogout">{{ $t('auth.logout') }}</button>
       </div>
@@ -255,6 +256,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import BillingBadge from '../components/BillingBadge.vue'
 import ParticlesBackground from '../components/magicui/ParticlesBackground.vue'
 import BorderBeam from '../components/magicui/BorderBeam.vue'
 import HeroGraphPreview from '../components/HeroGraphPreview.vue'
