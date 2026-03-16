@@ -58,3 +58,14 @@ backend/uploads/
 
 # Docker 数据
 data/
+
+# Internal docs (not for public repo)
+AgenikPredict_Analysis_and_Marketing_Plan.md
+Market_Entry_Strategy.docx
+HeyGen_Plan_and_Assets.docx
+LANDING_PAGE_COPY.md
+LANDING_i18n_*.json
+AGPL_COMPLIANCE_CHECKLIST.md
+MODIFICATIONS.md
+ROADMAP.md
+CLAUDE.md
