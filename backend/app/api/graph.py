@@ -14,6 +14,7 @@ from ..services.ontology_generator import OntologyGenerator
 from ..services.graph_builder import GraphBuilderService
 from ..services.text_processor import TextProcessor
 from ..utils.file_parser import FileParser
+from ..services.market_data import MarketDataService
 from ..utils.logger import get_logger
 from ..models.task import TaskManager, TaskStatus
 from ..models.project import ProjectManager, ProjectStatus
@@ -219,11 +220,21 @@ def generate_ontology():
                 "error": "No documents were successfully processed, please check file formats"
             }), 400
         
+        # Optionally enrich text with live market data
+        enrich_with_market_data = request.form.get('enrich_with_market_data', 'false').lower() == 'true'
+        if enrich_with_market_data:
+            market_service = MarketDataService()
+            if market_service.is_available:
+                all_text = market_service.enrich_text_with_market_data(all_text)
+                logger.info("Text enriched with live market data")
+            else:
+                logger.warning("Market data enrichment requested but service is not available")
+
         # Save extracted text
         project.total_text_length = len(all_text)
         ProjectManager.save_extracted_text(project.project_id, all_text)
         logger.info(f"Text extraction complete, {len(all_text)} characters total")
-        
+
         # Generate ontology
         logger.info("Calling LLM to generate ontology definition...")
         language = request.headers.get('Accept-Language', 'en')

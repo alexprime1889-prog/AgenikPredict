@@ -6,7 +6,9 @@
     <nav class="navbar">
       <div class="nav-brand">{{ $t('brand') }}</div>
       <div class="nav-links">
+        <span v-if="userEmail" class="nav-user">{{ userEmail }}</span>
         <LanguageSwitcher />
+        <button v-if="isLoggedIn" class="nav-logout" @click="handleLogout">{{ $t('auth.logout') }}</button>
       </div>
     </nav>
 
@@ -34,10 +36,7 @@
         </div>
 
         <div class="hero-right">
-          <!-- Logo area -->
-          <div class="logo-container">
-            <img src="../assets/logo/agenikpredict_logo_black.png" alt="AgenikPredict Logo" class="hero-logo" />
-          </div>
+          <HeroGraphPreview />
 
           <button class="scroll-down-btn" @click="scrollToBottom">
             ↓
@@ -124,7 +123,7 @@
             <div class="console-section">
               <div class="console-header">
                 <span class="console-label">{{ $t('console.realitySeed') }}</span>
-                <span class="console-meta">PDF, MD, TXT, Images, Video, URL, YouTube</span>
+                <span class="console-meta">{{ $t('console.supportedFormatsLong') }}</span>
               </div>
 
               <div
@@ -149,6 +148,7 @@
                   <div class="upload-icon">↑</div>
                   <div class="upload-title">{{ $t('upload.dragFiles') }}</div>
                   <div class="upload-hint">{{ $t('upload.browseFiles') }}</div>
+                  <div class="upload-accepts">{{ $t('upload.acceptsLabel') }}</div>
                 </div>
 
                 <div v-else class="file-list">
@@ -167,7 +167,7 @@
                   v-model="urlInput"
                   type="url"
                   class="url-field"
-                  placeholder="Paste URL or YouTube link to extract content"
+                  :placeholder="$t('upload.urlPlaceholder')"
                   :disabled="loading"
                   @keydown.enter.prevent="addUrl"
                 />
@@ -226,6 +226,10 @@
 
             <!-- Start button -->
             <div class="console-section btn-section">
+              <label class="market-data-toggle">
+                <input type="checkbox" v-model="enrichWithMarketData" :disabled="loading" />
+                <span class="toggle-text">{{ $t('console.enrichMarketData') }}</span>
+              </label>
               <button
                 class="start-engine-btn"
                 @click="startSimulation"
@@ -253,8 +257,18 @@ import HistoryDatabase from '../components/HistoryDatabase.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import ParticlesBackground from '../components/magicui/ParticlesBackground.vue'
 import BorderBeam from '../components/magicui/BorderBeam.vue'
+import HeroGraphPreview from '../components/HeroGraphPreview.vue'
+import { isAuthenticated, currentUser, logout } from '../store/auth'
 
 const router = useRouter()
+
+// Auth
+const isLoggedIn = isAuthenticated
+const userEmail = computed(() => currentUser.value?.email || '')
+function handleLogout() {
+  logout()
+  router.push('/login')
+}
 
 // Form data
 const formData = ref({
@@ -272,6 +286,7 @@ const urlInput = ref('')
 const loading = ref(false)
 const error = ref('')
 const isDragOver = ref(false)
+const enrichWithMarketData = ref(false)
 
 // File input ref
 const fileInput = ref(null)
@@ -398,7 +413,7 @@ const startSimulation = () => {
   if (!canSubmit.value || loading.value) return
 
   import('../store/pendingUpload.js').then(({ setPendingUpload }) => {
-    setPendingUpload(files.value, formData.value.simulationRequirement, urls.value)
+    setPendingUpload(files.value, formData.value.simulationRequirement, urls.value, enrichWithMarketData.value)
 
     router.push({
       name: 'Process',
@@ -465,6 +480,29 @@ const startSimulation = () => {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.nav-user {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.nav-logout {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #666;
+  background: none;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-logout:hover {
+  color: #fff;
+  border-color: #555;
 }
 
 .github-link {
@@ -610,11 +648,12 @@ const startSimulation = () => {
 }
 
 .hero-right {
-  flex: 0.8;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: stretch;
 }
 
 .logo-container {
@@ -789,7 +828,6 @@ const startSimulation = () => {
   padding: 8px;
   background: rgba(255, 255, 255, 0.03);
   position: relative;
-  overflow: hidden;
 }
 
 .console-section {
@@ -856,6 +894,16 @@ const startSimulation = () => {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: #666666;
+}
+
+.upload-accepts {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #888888;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  letter-spacing: 0.02em;
 }
 
 .url-input-row {
@@ -1155,6 +1203,62 @@ const startSimulation = () => {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Market data toggle */
+.market-data-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.market-data-toggle:hover {
+  color: #CCC;
+}
+
+.market-data-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.market-data-toggle input[type="checkbox"]:checked {
+  border-color: var(--orange);
+  background: rgba(255, 69, 0, 0.15);
+}
+
+.market-data-toggle input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--orange);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.market-data-toggle input[type="checkbox"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggle-text {
+  user-select: none;
 }
 
 /* Responsive layout */
