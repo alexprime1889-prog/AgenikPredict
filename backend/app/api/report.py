@@ -15,16 +15,55 @@ from ..services.simulation_manager import SimulationManager
 from ..models.project import ProjectManager
 from ..models.task import TaskManager, TaskStatus
 from ..models.user import get_user_billing_status
-from .auth import optional_auth
+from .auth import require_auth, optional_auth
 from ..utils.logger import get_logger
 
 logger = get_logger('agenikpredict.api.report')
 
 
+def _verify_simulation_access(simulation_id):
+    """
+    Verify current user has access to a simulation (through its parent project).
+
+    Returns (simulation_state, project, error_response).
+    """
+    manager = SimulationManager()
+    state = manager.get_simulation(simulation_id)
+    if not state:
+        return None, None, (jsonify({"success": False, "error": f"Simulation not found: {simulation_id}"}), 404)
+
+    project = ProjectManager.get_project(state.project_id)
+    if not project:
+        return None, None, (jsonify({"success": False, "error": f"Project not found: {state.project_id}"}), 404)
+
+    if project.owner_id and project.owner_id != g.user_id and getattr(g, 'user_role', '') != 'admin':
+        return None, None, (jsonify({"success": False, "error": "Access denied"}), 403)
+
+    return state, project, None
+
+
+def _verify_report_access(report_id):
+    """
+    Verify current user has access to a report (through simulation -> project chain).
+
+    Returns (report, error_response).
+    """
+    report = ReportManager.get_report(report_id)
+    if not report:
+        return None, (jsonify({"success": False, "error": f"Report not found: {report_id}"}), 404)
+
+    # Check ownership through the simulation's parent project
+    _, _, error = _verify_simulation_access(report.simulation_id)
+    if error:
+        return None, error
+
+    return report, None
+
+
 # ============== Report Generation API ==============
 
 @report_bp.route('/generate', methods=['POST'])
-@optional_auth
+@require_auth
 def generate_report():
     """
     Generate simulation analysis report (async task)
@@ -75,16 +114,11 @@ def generate_report():
         custom_persona = data.get('custom_persona', '')
         report_variables = data.get('report_variables', {})
 
-        # Get simulation info
-        manager = SimulationManager()
-        state = manager.get_simulation(simulation_id)
-        
-        if not state:
-            return jsonify({
-                "success": False,
-                "error": f"Simulation not found: {simulation_id}"
-            }), 404
-        
+        # Get simulation info (with ownership check)
+        state, project, error = _verify_simulation_access(simulation_id)
+        if error:
+            return error
+
         # Check for existing report
         if not force_regenerate:
             existing_report = ReportManager.get_report_by_simulation(simulation_id)
@@ -99,14 +133,6 @@ def generate_report():
                         "already_generated": True
                     }
                 })
-        
-        # Get project info
-        project = ProjectManager.get_project(state.project_id)
-        if not project:
-            return jsonify({
-                "success": False,
-                "error": f"Project not found: {state.project_id}"
-            }), 404
         
         graph_id = state.graph_id or project.graph_id
         if not graph_id:
@@ -210,15 +236,15 @@ def generate_report():
         })
         
     except Exception as e:
-        logger.error(f"Failed to start report generation task: {str(e)}")
+        logger.error(f"Failed to start report generation task: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/generate/status', methods=['POST'])
+@require_auth
 def get_generate_status():
     """
     Query report generation task progress
@@ -293,71 +319,50 @@ def get_generate_status():
 # ============== Report Retrieval API ==============
 
 @report_bp.route('/<report_id>', methods=['GET'])
+@require_auth
 def get_report(report_id: str):
     """
-    Get report details
-    
-    Returns:
-        {
-            "success": true,
-            "data": {
-                "report_id": "report_xxxx",
-                "simulation_id": "sim_xxxx",
-                "status": "completed",
-                "outline": {...},
-                "markdown_content": "...",
-                "created_at": "...",
-                "completed_at": "..."
-            }
-        }
+    Get report details (ownership verified)
     """
     try:
-        report = ReportManager.get_report(report_id)
-        
-        if not report:
-            return jsonify({
-                "success": False,
-                "error": f"Report not found: {report_id}"
-            }), 404
-        
+        report, error = _verify_report_access(report_id)
+        if error:
+            return error
+
         return jsonify({
             "success": True,
             "data": report.to_dict()
         })
         
     except Exception as e:
-        logger.error(f"Failed to get report: {str(e)}")
+        logger.error(f"Failed to get report: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/by-simulation/<simulation_id>', methods=['GET'])
+@require_auth
 def get_report_by_simulation(simulation_id: str):
     """
-    Get report by simulation ID
-    
-    Returns:
-        {
-            "success": true,
-            "data": {
-                "report_id": "report_xxxx",
-                ...
-            }
-        }
+    Get report by simulation ID (ownership verified)
     """
     try:
+        # Verify access to the simulation
+        _, _, error = _verify_simulation_access(simulation_id)
+        if error:
+            return error
+
         report = ReportManager.get_report_by_simulation(simulation_id)
-        
+
         if not report:
             return jsonify({
                 "success": False,
                 "error": f"No report available for this simulation: {simulation_id}",
                 "has_report": False
             }), 404
-        
+
         return jsonify({
             "success": True,
             "data": report.to_dict(),
@@ -365,69 +370,73 @@ def get_report_by_simulation(simulation_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get report: {str(e)}")
+        logger.error(f"Failed to get report: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/list', methods=['GET'])
+@require_auth
 def list_reports():
     """
-    List all reports
-    
-    Query parameters:
-        simulation_id: Filter by simulation ID (optional)
-        limit: Return count limit (default 50)
-    
-    Returns:
-        {
-            "success": true,
-            "data": [...],
-            "count": 10
-        }
+    List reports accessible by the current user.
+
+    Filters reports by checking ownership of the parent simulation/project chain.
+    Admins see all reports.
     """
     try:
         simulation_id = request.args.get('simulation_id')
         limit = request.args.get('limit', 50, type=int)
-        
-        reports = ReportManager.list_reports(
+
+        all_reports = ReportManager.list_reports(
             simulation_id=simulation_id,
             limit=limit
         )
-        
+
+        # Filter by ownership (admins bypass)
+        if getattr(g, 'user_role', '') == 'admin':
+            filtered_reports = all_reports
+        else:
+            filtered_reports = []
+            for report in all_reports:
+                # Check ownership through simulation -> project chain
+                manager = SimulationManager()
+                state = manager.get_simulation(report.simulation_id)
+                if not state:
+                    continue
+                project = ProjectManager.get_project(state.project_id)
+                if not project:
+                    continue
+                # Allow if: no owner (legacy), or owner matches
+                if project.owner_id is None or project.owner_id == g.user_id:
+                    filtered_reports.append(report)
+
         return jsonify({
             "success": True,
-            "data": [r.to_dict() for r in reports],
-            "count": len(reports)
+            "data": [r.to_dict() for r in filtered_reports],
+            "count": len(filtered_reports)
         })
         
     except Exception as e:
-        logger.error(f"Failed to list reports: {str(e)}")
+        logger.error(f"Failed to list reports: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/<report_id>/download', methods=['GET'])
+@require_auth
 def download_report(report_id: str):
     """
-    Download report (Markdown format)
-    
-    Returns Markdown file
+    Download report (Markdown format, ownership verified)
     """
     try:
-        report = ReportManager.get_report(report_id)
-        
-        if not report:
-            return jsonify({
-                "success": False,
-                "error": f"Report not found: {report_id}"
-            }), 404
+        report, error = _verify_report_access(report_id)
+        if error:
+            return error
         
         md_path = ReportManager._get_report_markdown_path(report_id)
         
@@ -451,43 +460,47 @@ def download_report(report_id: str):
         )
         
     except Exception as e:
-        logger.error(f"Failed to download report: {str(e)}")
+        logger.error(f"Failed to download report: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/<report_id>', methods=['DELETE'])
+@require_auth
 def delete_report(report_id: str):
-    """Delete report"""
+    """Delete report (ownership verified)"""
     try:
+        report, error = _verify_report_access(report_id)
+        if error:
+            return error
+
         success = ReportManager.delete_report(report_id)
-        
+
         if not success:
             return jsonify({
                 "success": False,
                 "error": f"Report not found: {report_id}"
             }), 404
-        
+
         return jsonify({
             "success": True,
             "message": f"Report deleted: {report_id}"
         })
         
     except Exception as e:
-        logger.error(f"Failed to delete report: {str(e)}")
+        logger.error(f"Failed to delete report: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Report Agent Chat API ==============
 
 @report_bp.route('/chat', methods=['POST'])
+@require_auth
 def chat_with_report_agent():
     """
     Chat with Report Agent
@@ -533,23 +546,11 @@ def chat_with_report_agent():
                 "error": "Please provide message"
             }), 400
         
-        # Get simulation and project info
-        manager = SimulationManager()
-        state = manager.get_simulation(simulation_id)
-        
-        if not state:
-            return jsonify({
-                "success": False,
-                "error": f"Simulation not found: {simulation_id}"
-            }), 404
-        
-        project = ProjectManager.get_project(state.project_id)
-        if not project:
-            return jsonify({
-                "success": False,
-                "error": f"Project not found: {state.project_id}"
-            }), 404
-        
+        # Get simulation and project info (with ownership check)
+        state, project, error = _verify_simulation_access(simulation_id)
+        if error:
+            return error
+
         graph_id = state.graph_id or project.graph_id
         if not graph_id:
             return jsonify({
@@ -578,17 +579,17 @@ def chat_with_report_agent():
         })
         
     except Exception as e:
-        logger.error(f"Chat failed: {str(e)}")
+        logger.error(f"Chat failed: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Report Progress and Section API ==============
 
 @report_bp.route('/<report_id>/progress', methods=['GET'])
+@require_auth
 def get_report_progress(report_id: str):
     """
     Get report generation progress (real-time)
@@ -607,29 +608,34 @@ def get_report_progress(report_id: str):
         }
     """
     try:
+        # Verify ownership
+        _, error = _verify_report_access(report_id)
+        if error:
+            return error
+
         progress = ReportManager.get_progress(report_id)
-        
+
         if not progress:
             return jsonify({
                 "success": False,
                 "error": f"Report not found or progress info unavailable: {report_id}"
             }), 404
-        
+
         return jsonify({
             "success": True,
             "data": progress
         })
-        
+
     except Exception as e:
-        logger.error(f"Failed to get report progress: {str(e)}")
+        logger.error(f"Failed to get report progress: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/<report_id>/sections', methods=['GET'])
+@require_auth
 def get_report_sections(report_id: str):
     """
     Get list of generated sections (section-by-section output)
@@ -672,15 +678,15 @@ def get_report_sections(report_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get section list: {str(e)}")
+        logger.error(f"Failed to get section list: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/<report_id>/section/<int:section_index>', methods=['GET'])
+@require_auth
 def get_single_section(report_id: str, section_index: int):
     """
     Get single section content
@@ -716,36 +722,27 @@ def get_single_section(report_id: str, section_index: int):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get section content: {str(e)}")
+        logger.error(f"Failed to get section content: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Report Status Check API ==============
 
 @report_bp.route('/check/<simulation_id>', methods=['GET'])
+@require_auth
 def check_report_status(simulation_id: str):
     """
-    Check if simulation has a report and its status
-    
-    Used by frontend to determine if Interview feature is unlocked
-    
-    Returns:
-        {
-            "success": true,
-            "data": {
-                "simulation_id": "sim_xxxx",
-                "has_report": true,
-                "report_status": "completed",
-                "report_id": "report_xxxx",
-                "interview_unlocked": true
-            }
-        }
+    Check if simulation has a report and its status (ownership verified)
     """
     try:
+        # Verify access to the simulation
+        _, _, error = _verify_simulation_access(simulation_id)
+        if error:
+            return error
+
         report = ReportManager.get_report_by_simulation(simulation_id)
         
         has_report = report is not None
@@ -767,17 +764,17 @@ def check_report_status(simulation_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to check report status: {str(e)}")
+        logger.error(f"Failed to check report status: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Agent Log API ==============
 
 @report_bp.route('/<report_id>/agent-log', methods=['GET'])
+@require_auth
 def get_agent_log(report_id: str):
     """
     Get detailed execution log of Report Agent
@@ -828,15 +825,15 @@ def get_agent_log(report_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get Agent log: {str(e)}")
+        logger.error(f"Failed to get Agent log: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/<report_id>/agent-log/stream', methods=['GET'])
+@require_auth
 def stream_agent_log(report_id: str):
     """
     Get complete Agent log (all at once)
@@ -862,17 +859,17 @@ def stream_agent_log(report_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get Agent log: {str(e)}")
+        logger.error(f"Failed to get Agent log: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Console Log API ==============
 
 @report_bp.route('/<report_id>/console-log', methods=['GET'])
+@require_auth
 def get_console_log(report_id: str):
     """
     Get Report Agent console output log
@@ -910,15 +907,15 @@ def get_console_log(report_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get console log: {str(e)}")
+        logger.error(f"Failed to get console log: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/<report_id>/console-log/stream', methods=['GET'])
+@require_auth
 def stream_console_log(report_id: str):
     """
     Get complete console log (all at once)
@@ -944,17 +941,17 @@ def stream_console_log(report_id: str):
         })
         
     except Exception as e:
-        logger.error(f"Failed to get console log: {str(e)}")
+        logger.error(f"Failed to get console log: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Tool Call API (for debugging) ==============
 
 @report_bp.route('/tools/search', methods=['POST'])
+@require_auth
 def search_graph_tool():
     """
     Graph search tool endpoint (for debugging)
@@ -994,15 +991,15 @@ def search_graph_tool():
         })
         
     except Exception as e:
-        logger.error(f"Graph search failed: {str(e)}")
+        logger.error(f"Graph search failed: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @report_bp.route('/tools/statistics', methods=['POST'])
+@require_auth
 def get_graph_statistics_tool():
     """
     Graph statistics tool endpoint (for debugging)
@@ -1034,9 +1031,8 @@ def get_graph_statistics_tool():
         })
         
     except Exception as e:
-        logger.error(f"Failed to get graph statistics: {str(e)}")
+        logger.error(f"Failed to get graph statistics: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500

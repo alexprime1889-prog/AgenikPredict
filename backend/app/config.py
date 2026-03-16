@@ -21,7 +21,7 @@ class Config:
     """Flask configuration class"""
 
     # Flask config
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'agenikpredict-secret-key')
+    SECRET_KEY = os.environ.get('SECRET_KEY', '')
     DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
 
     # Auth config

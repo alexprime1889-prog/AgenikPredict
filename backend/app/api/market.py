@@ -5,6 +5,7 @@ Provides ticker detection, quote fetching, and text enrichment endpoints.
 
 from flask import request, jsonify
 from . import market_bp
+from .auth import require_auth
 from ..services.market_data import MarketDataService
 from ..utils.logger import get_logger
 
@@ -34,6 +35,7 @@ def market_status():
 
 
 @market_bp.route('/detect-tickers', methods=['POST'])
+@require_auth
 def detect_tickers():
     """Detect stock ticker symbols in text."""
     data = request.get_json() or {}
@@ -55,6 +57,7 @@ def detect_tickers():
 
 
 @market_bp.route('/quote/<symbol>', methods=['GET'])
+@require_auth
 def get_quote(symbol):
     """Get real-time quote for a symbol."""
     service = _get_service()
@@ -73,6 +76,7 @@ def get_quote(symbol):
 
 
 @market_bp.route('/time-series/<symbol>', methods=['GET'])
+@require_auth
 def get_time_series(symbol):
     """Get historical time series for a symbol."""
     service = _get_service()
@@ -94,6 +98,7 @@ def get_time_series(symbol):
 
 
 @market_bp.route('/enrich', methods=['POST'])
+@require_auth
 def enrich_text():
     """Detect tickers in text and enrich with market data."""
     data = request.get_json() or {}
@@ -117,6 +122,7 @@ def enrich_text():
 
 
 @market_bp.route('/summary', methods=['POST'])
+@require_auth
 def market_summary():
     """Get quotes for multiple symbols."""
     data = request.get_json() or {}

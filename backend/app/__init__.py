@@ -39,8 +39,17 @@ def create_app(config_class=Config):
         logger.info("AgenikPredict Backend starting...")
         logger.info("=" * 50)
     
-    # Enable CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Enable CORS with restricted origins
+    allowed_origins = [
+        os.environ.get('APP_URL', 'http://localhost:3000'),
+        'https://agenikpredict.com',
+        'https://www.agenikpredict.com',
+        'https://app.agenikpredict.com',
+        'https://agenikpredict-landing.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:5173',
+    ]
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
     
     # Register simulation process cleanup function (ensure all simulation processes terminate on server shutdown)
     from .services.simulation_runner import SimulationRunner

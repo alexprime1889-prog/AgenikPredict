@@ -49,6 +49,9 @@ class Project:
     chunk_size: int = 500
     chunk_overlap: int = 50
     
+    # Ownership
+    owner_id: Optional[str] = None
+
     # Error info
     error: Optional[str] = None
     
@@ -69,7 +72,8 @@ class Project:
             "simulation_requirement": self.simulation_requirement,
             "chunk_size": self.chunk_size,
             "chunk_overlap": self.chunk_overlap,
-            "error": self.error
+            "error": self.error,
+            "owner_id": self.owner_id
         }
     
     @classmethod
@@ -94,7 +98,8 @@ class Project:
             simulation_requirement=data.get('simulation_requirement'),
             chunk_size=data.get('chunk_size', 500),
             chunk_overlap=data.get('chunk_overlap', 50),
-            error=data.get('error')
+            error=data.get('error'),
+            owner_id=data.get('owner_id')
         )
 
 
@@ -130,27 +135,29 @@ class ProjectManager:
         return os.path.join(cls._get_project_dir(project_id), 'extracted_text.txt')
     
     @classmethod
-    def create_project(cls, name: str = "Unnamed Project") -> Project:
+    def create_project(cls, name: str = "Unnamed Project", owner_id: Optional[str] = None) -> Project:
         """
         Create a new project
 
         Args:
             name: Project name
+            owner_id: Owner user ID (for multi-tenant isolation)
 
         Returns:
             Newly created Project object
         """
         cls._ensure_projects_dir()
-        
+
         project_id = f"proj_{uuid.uuid4().hex[:12]}"
         now = datetime.now().isoformat()
-        
+
         project = Project(
             project_id=project_id,
             name=name,
             status=ProjectStatus.CREATED,
             created_at=now,
-            updated_at=now
+            updated_at=now,
+            owner_id=owner_id
         )
         
         # Create project directory structure
@@ -218,6 +225,33 @@ class ProjectManager:
         
         return projects[:limit]
     
+    @classmethod
+    def list_projects_for_user(cls, owner_id: str, limit: int = 50) -> List[Project]:
+        """
+        List projects owned by a specific user.
+
+        Returns projects where owner_id matches, plus legacy projects (owner_id is None).
+
+        Args:
+            owner_id: User ID to filter by
+            limit: Return count limit
+
+        Returns:
+            Project list, sorted by creation time descending
+        """
+        cls._ensure_projects_dir()
+
+        projects = []
+        for project_id in os.listdir(cls.PROJECTS_DIR):
+            project = cls.get_project(project_id)
+            if project:
+                # Include if: owner matches, or legacy project (no owner set)
+                if project.owner_id is None or project.owner_id == owner_id:
+                    projects.append(project)
+
+        projects.sort(key=lambda p: p.created_at, reverse=True)
+        return projects[:limit]
+
     @classmethod
     def delete_project(cls, project_id: str) -> bool:
         """

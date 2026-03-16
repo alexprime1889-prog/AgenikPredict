@@ -13,6 +13,7 @@ import json
 import hmac
 import hashlib
 import base64
+import secrets as _secrets
 from functools import wraps
 
 from flask import request, jsonify, g
@@ -28,7 +29,11 @@ from ..utils.logger import get_logger
 
 logger = get_logger('agenikpredict.auth')
 
-JWT_SECRET = os.environ.get('JWT_SECRET', os.environ.get('SECRET_KEY', 'agenikpredict-jwt-secret'))
+_generated_secret = _secrets.token_hex(32)
+JWT_SECRET = os.environ.get('JWT_SECRET', os.environ.get('SECRET_KEY', ''))
+if not JWT_SECRET or JWT_SECRET in ('agenikpredict-jwt-secret', 'agenikpredict-secret-key'):
+    JWT_SECRET = _generated_secret
+    logger.warning("JWT_SECRET not set — using auto-generated secret (tokens will invalidate on restart)")
 JWT_TTL = 60 * 60 * 24 * 7  # 7 days
 
 

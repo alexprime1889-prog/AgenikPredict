@@ -71,6 +71,9 @@ class SimulationState:
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     
+    # Ownership
+    owner_id: Optional[str] = None
+
     # Error info
     error: Optional[str] = None
     
@@ -94,6 +97,7 @@ class SimulationState:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "error": self.error,
+            "owner_id": self.owner_id,
         }
     
     def to_simple_dict(self) -> Dict[str, Any]:
@@ -185,6 +189,7 @@ class SimulationManager:
             created_at=data.get("created_at", datetime.now().isoformat()),
             updated_at=data.get("updated_at", datetime.now().isoformat()),
             error=data.get("error"),
+            owner_id=data.get("owner_id"),
         )
         
         self._simulations[simulation_id] = state
@@ -196,6 +201,7 @@ class SimulationManager:
         graph_id: str,
         enable_twitter: bool = True,
         enable_reddit: bool = True,
+        owner_id: Optional[str] = None,
     ) -> SimulationState:
         """
         Create a new simulation
@@ -205,13 +211,14 @@ class SimulationManager:
             graph_id: Zep graph ID
             enable_twitter: Whether to enable Twitter simulation
             enable_reddit: Whether to enable Reddit simulation
+            owner_id: Owner user ID (for multi-tenant isolation)
 
         Returns:
             SimulationState
         """
         import uuid
         simulation_id = f"sim_{uuid.uuid4().hex[:12]}"
-        
+
         state = SimulationState(
             simulation_id=simulation_id,
             project_id=project_id,
@@ -219,6 +226,7 @@ class SimulationManager:
             enable_twitter=enable_twitter,
             enable_reddit=enable_reddit,
             status=SimulationStatus.CREATED,
+            owner_id=owner_id,
         )
         
         self._save_simulation_state(state)
@@ -461,22 +469,31 @@ class SimulationManager:
         """Get simulation status"""
         return self._load_simulation_state(simulation_id)
     
-    def list_simulations(self, project_id: Optional[str] = None) -> List[SimulationState]:
-        """List all simulations"""
+    def list_simulations(self, project_id: Optional[str] = None, owner_id: Optional[str] = None) -> List[SimulationState]:
+        """
+        List simulations with optional filters.
+
+        Args:
+            project_id: Filter by project ID (optional)
+            owner_id: Filter by owner user ID (optional). Legacy simulations (owner_id=None) are included.
+        """
         simulations = []
-        
+
         if os.path.exists(self.SIMULATION_DATA_DIR):
             for sim_id in os.listdir(self.SIMULATION_DATA_DIR):
                 # Skip hidden files (e.g. .DS_Store) and non-directory files
                 sim_path = os.path.join(self.SIMULATION_DATA_DIR, sim_id)
                 if sim_id.startswith('.') or not os.path.isdir(sim_path):
                     continue
-                
+
                 state = self._load_simulation_state(sim_id)
                 if state:
-                    if project_id is None or state.project_id == project_id:
-                        simulations.append(state)
-        
+                    if project_id is not None and state.project_id != project_id:
+                        continue
+                    if owner_id is not None and state.owner_id is not None and state.owner_id != owner_id:
+                        continue
+                    simulations.append(state)
+
         return simulations
     
     def get_profiles(self, simulation_id: str, platform: str = "reddit") -> List[Dict[str, Any]]:

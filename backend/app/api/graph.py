@@ -6,9 +6,10 @@ Uses project context mechanism with server-side persistent state
 import os
 import traceback
 import threading
-from flask import request, jsonify
+from flask import request, jsonify, g
 
 from . import graph_bp
+from .auth import require_auth
 from ..config import Config
 from ..services.ontology_generator import OntologyGenerator
 from ..services.graph_builder import GraphBuilderService
@@ -31,21 +32,38 @@ def allowed_file(filename: str) -> bool:
     return ext in Config.ALLOWED_EXTENSIONS
 
 
+def verify_project_access(project_id):
+    """
+    Load project and verify the current user has access.
+
+    Access is granted if:
+    - The project has no owner_id (legacy data)
+    - The owner_id matches g.user_id
+    - The user has admin role
+
+    Returns:
+        (project, error_response) — project is None if access denied
+    """
+    project = ProjectManager.get_project(project_id)
+    if not project:
+        return None, (jsonify({"success": False, "error": f"Project not found: {project_id}"}), 404)
+    if project.owner_id and project.owner_id != g.user_id and getattr(g, 'user_role', '') != 'admin':
+        return None, (jsonify({"success": False, "error": "Access denied"}), 403)
+    return project, None
+
+
 # ============== Project Management API ==============
 
 @graph_bp.route('/project/<project_id>', methods=['GET'])
+@require_auth
 def get_project(project_id: str):
     """
     Get project details
     """
-    project = ProjectManager.get_project(project_id)
-    
-    if not project:
-        return jsonify({
-            "success": False,
-            "error": f"Project not found: {project_id}"
-        }), 404
-    
+    project, error = verify_project_access(project_id)
+    if error:
+        return error
+
     return jsonify({
         "success": True,
         "data": project.to_dict()
@@ -53,13 +71,18 @@ def get_project(project_id: str):
 
 
 @graph_bp.route('/project/list', methods=['GET'])
+@require_auth
 def list_projects():
     """
-    List all projects
+    List projects owned by the current user (admins see all)
     """
     limit = request.args.get('limit', 50, type=int)
-    projects = ProjectManager.list_projects(limit=limit)
-    
+
+    if getattr(g, 'user_role', '') == 'admin':
+        projects = ProjectManager.list_projects(limit=limit)
+    else:
+        projects = ProjectManager.list_projects_for_user(g.user_id, limit=limit)
+
     return jsonify({
         "success": True,
         "data": [p.to_dict() for p in projects],
@@ -68,18 +91,23 @@ def list_projects():
 
 
 @graph_bp.route('/project/<project_id>', methods=['DELETE'])
+@require_auth
 def delete_project(project_id: str):
     """
-    Delete project
+    Delete project (ownership verified)
     """
+    project, error = verify_project_access(project_id)
+    if error:
+        return error
+
     success = ProjectManager.delete_project(project_id)
-    
+
     if not success:
         return jsonify({
             "success": False,
             "error": f"Project not found or deletion failed: {project_id}"
         }), 404
-    
+
     return jsonify({
         "success": True,
         "message": f"Project deleted: {project_id}"
@@ -87,17 +115,14 @@ def delete_project(project_id: str):
 
 
 @graph_bp.route('/project/<project_id>/reset', methods=['POST'])
+@require_auth
 def reset_project(project_id: str):
     """
     Reset project state (for rebuilding graph)
     """
-    project = ProjectManager.get_project(project_id)
-    
-    if not project:
-        return jsonify({
-            "success": False,
-            "error": f"Project not found: {project_id}"
-        }), 404
+    project, error = verify_project_access(project_id)
+    if error:
+        return error
     
     # Reset to ontology generated state
     if project.ontology:
@@ -120,6 +145,7 @@ def reset_project(project_id: str):
 # ============== API 1: Upload files and generate ontology ==============
 
 @graph_bp.route('/ontology/generate', methods=['POST'])
+@require_auth
 def generate_ontology():
     """
     API 1: Upload files and analyze to generate ontology definition
@@ -172,8 +198,8 @@ def generate_ontology():
                 "error": "Please upload at least one document file"
             }), 400
         
-        # Create project
-        project = ProjectManager.create_project(name=project_name)
+        # Create project (assign to current user)
+        project = ProjectManager.create_project(name=project_name, owner_id=g.user_id)
         project.simulation_requirement = simulation_requirement
         logger.info(f"Created project: {project.project_id}")
         
@@ -273,16 +299,17 @@ def generate_ontology():
         })
         
     except Exception as e:
+        logger.error(f"Ontology generation failed: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== API 2: Build graph ==============
 
 @graph_bp.route('/build', methods=['POST'])
+@require_auth
 def build_graph():
     """
     API 2: Build graph based on project_id
@@ -330,14 +357,11 @@ def build_graph():
                 "error": "Please provide project_id"
             }), 400
         
-        # Get project
-        project = ProjectManager.get_project(project_id)
-        if not project:
-            return jsonify({
-                "success": False,
-                "error": f"Project not found: {project_id}"
-            }), 404
-        
+        # Get project (with ownership check)
+        project, error = verify_project_access(project_id)
+        if error:
+            return error
+
         # Check project status
         force = data.get('force', False)  # force rebuild
         
@@ -543,16 +567,17 @@ def build_graph():
         })
         
     except Exception as e:
+        logger.error(f"Graph build failed: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 # ============== Task Query API ==============
 
 @graph_bp.route('/task/<task_id>', methods=['GET'])
+@require_auth
 def get_task(task_id: str):
     """
     Query task status
@@ -572,6 +597,7 @@ def get_task(task_id: str):
 
 
 @graph_bp.route('/tasks', methods=['GET'])
+@require_auth
 def list_tasks():
     """
     List all tasks
@@ -588,6 +614,7 @@ def list_tasks():
 # ============== Graph Data API ==============
 
 @graph_bp.route('/data/<graph_id>', methods=['GET'])
+@require_auth
 def get_graph_data(graph_id: str):
     """
     Get graph data (nodes and edges)
@@ -608,14 +635,15 @@ def get_graph_data(graph_id: str):
         })
         
     except Exception as e:
+        logger.error(f"Failed to get graph data: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
 
 
 @graph_bp.route('/delete/<graph_id>', methods=['DELETE'])
+@require_auth
 def delete_graph(graph_id: str):
     """
     Delete Zep graph
@@ -636,8 +664,8 @@ def delete_graph(graph_id: str):
         })
         
     except Exception as e:
+        logger.error(f"Failed to delete graph: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
+            "error": str(e)
         }), 500
