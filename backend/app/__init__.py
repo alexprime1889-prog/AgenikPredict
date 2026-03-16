@@ -103,6 +103,10 @@ def create_app(config_class=Config):
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_frontend(path):
+        # Never intercept API or health routes
+        if path.startswith('api/') or path == 'health':
+            from flask import abort
+            abort(404)
         if path and os.path.exists(os.path.join(frontend_dist, path)):
             return send_from_directory(frontend_dist, path)
         index = os.path.join(frontend_dist, 'index.html')
