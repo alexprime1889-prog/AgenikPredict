@@ -1087,8 +1087,9 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #FAFAFA;
+  background: var(--surface);
   font-family: 'Space Grotesk', 'Noto Sans Hebrew', system-ui, sans-serif;
+  transition: background 0.3s ease;
 }
 
 .scroll-container {
@@ -1097,23 +1098,38 @@ onUnmounted(() => {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 /* Step Card */
 .step-card {
-  background: #FFF;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  border: 1px solid #EAEAEA;
-  transition: all 0.3s ease;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--card-border);
+  border-left: 4px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
+.step-card:hover {
+  border-color: var(--card-border-hover);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
 .step-card.active {
-  border-color: #FF5722;
-  box-shadow: 0 4px 12px rgba(255, 87, 34, 0.08);
+  border-left-color: var(--accent);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.step-card.completed {
+  opacity: 0.75;
+}
+
+.step-card.completed:hover {
+  opacity: 1;
 }
 
 .card-header {
@@ -1126,55 +1142,82 @@ onUnmounted(() => {
 .step-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .step-num {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
-  color: #E0E0E0;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
 }
 
-.step-card.active .step-num,
+.step-card.active .step-num {
+  color: var(--accent);
+}
+
 .step-card.completed .step-num {
-  color: #000;
+  color: var(--success-text);
 }
 
 .step-title {
   font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.5px;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
 }
 
 .badge {
   font-size: 10px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
 }
 
-.badge.success { background: #E8F5E9; color: #2E7D32; }
-.badge.processing { background: #FF5722; color: #FFF; }
-.badge.pending { background: #F5F5F5; color: #999; }
-.badge.accent { background: #E3F2FD; color: #1565C0; }
-
-.card-content {
-  /* No extra padding - uses step-card's padding */
+.badge.success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
 }
+
+.badge.processing {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.badge.pending {
+  background: var(--pending-bg);
+  color: var(--pending-text);
+  border: 1px solid var(--pending-border);
+}
+
+.badge.accent {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.card-content {}
 
 .api-note {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: #999;
-  margin-bottom: 8px;
+  display: none;
 }
 
 .description {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.5;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
   margin-bottom: 16px;
 }
 
@@ -1191,32 +1234,36 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .action-btn.primary {
-  background: #000;
-  color: #FFF;
+  background: var(--accent);
+  color: #fff;
 }
 
 .action-btn.primary:hover:not(:disabled) {
-  opacity: 0.8;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .action-btn.secondary {
-  background: #F5F5F5;
-  color: #333;
+  background: var(--pending-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--card-border);
 }
 
 .action-btn.secondary:hover:not(:disabled) {
-  background: #E5E5E5;
+  border-color: var(--card-border-hover);
+  color: var(--text-primary);
 }
 
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .action-group {
@@ -1236,10 +1283,11 @@ onUnmounted(() => {
 
 /* Info Card */
 .info-card {
-  background: #F5F5F5;
-  border-radius: 6px;
+  background: var(--pending-bg);
+  border-radius: 8px;
   padding: 16px;
   margin-top: 16px;
+  border: 1px solid var(--card-border);
 }
 
 .info-row {
@@ -1247,7 +1295,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px dashed #E0E0E0;
+  border-bottom: 1px dashed var(--divider);
 }
 
 .info-row:last-child {
@@ -1256,7 +1304,7 @@ onUnmounted(() => {
 
 .info-label {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .info-value {
@@ -2052,29 +2100,30 @@ onUnmounted(() => {
 
 /* System Logs */
 .system-logs {
-  background: #000;
-  color: #DDD;
+  background: var(--log-bg);
+  color: var(--log-text);
   padding: 16px;
   font-family: 'JetBrains Mono', monospace;
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--log-border);
   flex-shrink: 0;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .log-header {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--log-border);
   padding-bottom: 8px;
   margin-bottom: 8px;
   font-size: 10px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .log-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  height: 80px; /* Approx 4 lines visible */
+  height: 80px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -2084,7 +2133,7 @@ onUnmounted(() => {
 }
 
 .log-content::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--card-border);
   border-radius: 2px;
 }
 
@@ -2096,12 +2145,12 @@ onUnmounted(() => {
 }
 
 .log-time {
-  color: #666;
+  color: var(--log-timestamp);
   min-width: 75px;
 }
 
 .log-msg {
-  color: #CCC;
+  color: var(--log-text);
   word-break: break-all;
 }
 

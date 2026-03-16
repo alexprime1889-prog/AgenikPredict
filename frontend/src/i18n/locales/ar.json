@@ -369,7 +369,7 @@
 
   "auth.signIn": "تسجيل الدخول",
   "auth.enterEmail": "أدخل بريدك الإلكتروني وسنرسل لك رابطًا سحريًا لتسجيل الدخول فورًا.",
-  "auth.emailPlaceholder": "you{'@'}company.com",
+  "auth.emailPlaceholder": "أنت{'@'}شركة.com",
   "auth.sendLink": "إرسال الرابط السحري",
   "auth.sending": "جارٍ الإرسال...",
   "auth.or": "أو",
@@ -384,6 +384,7 @@
   "auth.signedIn": "تم تسجيل الدخول!",
   "auth.redirecting": "جارٍ إعادة التوجيه إلى AgenikPredict...",
   "auth.logout": "تسجيل الخروج",
+  "auth.loginSlogan": "شاهد الغد.\nقرّر اليوم.",
 
   "console.enrichMarketData": "إثراء ببيانات السوق الحية",
 

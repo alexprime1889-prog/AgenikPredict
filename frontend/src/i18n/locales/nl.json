@@ -384,6 +384,7 @@
   "auth.signedIn": "U bent ingelogd!",
   "auth.redirecting": "Doorverwijzen naar AgenikPredict...",
   "auth.logout": "Uitloggen",
+  "auth.loginSlogan": "Zie morgen.\nBeslis vandaag.",
 
   "console.enrichMarketData": "Verrijken met live marktgegevens",
 

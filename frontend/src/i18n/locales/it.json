@@ -384,6 +384,7 @@
   "auth.signedIn": "Accesso effettuato!",
   "auth.redirecting": "Reindirizzamento ad AgenikPredict...",
   "auth.logout": "Esci",
+  "auth.loginSlogan": "Guarda il domani.\nDecidi oggi.",
 
   "console.enrichMarketData": "Arricchisci con dati di mercato in tempo reale",
 

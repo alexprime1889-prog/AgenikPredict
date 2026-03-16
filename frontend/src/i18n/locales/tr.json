@@ -384,6 +384,7 @@
   "auth.signedIn": "Giriş yaptınız!",
   "auth.redirecting": "AGENIKPREDICT'e yönlendiriliyorsunuz...",
   "auth.logout": "Çıkış yap",
+  "auth.loginSlogan": "Yarını görün.\nBugün karar verin.",
 
   "console.enrichMarketData": "Canlı piyasa verileriyle zenginleştir",
 

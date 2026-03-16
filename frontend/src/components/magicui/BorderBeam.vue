@@ -30,16 +30,30 @@ const beamStyle = computed(() => ({
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  offset-path: rect(0 auto auto 0 round var(--beam-size));
-  animation: border-beam-move var(--beam-duration) var(--beam-delay) infinite linear;
+  border: transparent solid var(--beam-border-width);
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+  mask-image: linear-gradient(transparent, transparent), linear-gradient(#000, #000);
+}
+
+.border-beam::after {
+  content: '';
+  position: absolute;
   width: var(--beam-size);
-  height: var(--beam-border-width);
+  aspect-ratio: 1;
   background: linear-gradient(
     to left,
     var(--beam-color-from),
     var(--beam-color-to),
     transparent
   );
-  opacity: 0.75;
+  offset-path: rect(0 auto auto 0 round var(--beam-size));
+  animation: border-beam-move var(--beam-duration) linear infinite;
+  animation-delay: calc(var(--beam-delay) * -1);
+}
+
+@keyframes border-beam-move {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
 }
 </style>

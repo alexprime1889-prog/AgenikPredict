@@ -368,7 +368,7 @@
 
   "auth.signIn": "התחברות",
   "auth.enterEmail": "הזינו את האימייל שלכם \u2014 נשלח לכם קישור להתחברות מיידית.",
-  "auth.emailPlaceholder": "you{'@'}company.com",
+  "auth.emailPlaceholder": "את{'@'}חברה.com",
   "auth.sendLink": "שליחת קישור",
   "auth.sending": "שולח...",
   "auth.or": "או",
@@ -383,6 +383,7 @@
   "auth.signedIn": "!התחברתם",
   "auth.redirecting": "...מעבירים ל-AgenikPredict",
   "auth.logout": "התנתקות",
+  "auth.loginSlogan": "ראו את המחר.\nהחליטו היום.",
 
   "console.enrichMarketData": "העשרה בנתוני שוק בזמן אמת",
 

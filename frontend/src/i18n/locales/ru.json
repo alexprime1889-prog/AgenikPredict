@@ -383,6 +383,7 @@
   "auth.signedIn": "Вы вошли!",
   "auth.redirecting": "Перенаправляем в AgenikPredict...",
   "auth.logout": "Выйти",
+  "auth.loginSlogan": "Увидьте завтра.\nРешайте сегодня.",
 
   "console.enrichMarketData": "Обогатить данными рынка в реальном времени",
 

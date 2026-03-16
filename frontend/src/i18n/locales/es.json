@@ -383,6 +383,7 @@
   "auth.signedIn": "\u00A1Listo!",
   "auth.redirecting": "Redirigiendo a AgenikPredict...",
   "auth.logout": "Cerrar sesi\u00F3n",
+  "auth.loginSlogan": "Ve el mañana.\nDecide hoy.",
 
   "console.enrichMarketData": "Enriquecer con datos de mercado en vivo",
 

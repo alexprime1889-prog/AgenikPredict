@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
 import './styles/magic-animations.css'
+import './styles/themes.css'
 
 const app = createApp(App)
 

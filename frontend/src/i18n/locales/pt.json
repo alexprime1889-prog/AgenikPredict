@@ -384,6 +384,7 @@
   "auth.signedIn": "Sessão iniciada!",
   "auth.redirecting": "A redirecionar para o AgenikPredict...",
   "auth.logout": "Terminar sessão",
+  "auth.loginSlogan": "Veja o amanhã.\nDecida hoje.",
 
   "console.enrichMarketData": "Enriquecer com dados de mercado em tempo real",
 
