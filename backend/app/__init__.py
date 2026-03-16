@@ -85,6 +85,29 @@ def create_app(config_class=Config):
     
     if should_log_startup:
         logger.info("AgenikPredict Backend startup complete")
-    
+
+    # ------------------------------------------------------------------
+    # Serve Vue frontend static files in production
+    # In dev the Vite dev-server handles this; in production the built
+    # assets live at <project>/frontend/dist and Flask serves them via
+    # this catch-all.  It is registered AFTER all /api/* blueprints and
+    # /health so those routes take priority.
+    # ------------------------------------------------------------------
+    from flask import send_from_directory
+
+    frontend_dist = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'dist')
+    )
+
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_frontend(path):
+        if path and os.path.exists(os.path.join(frontend_dist, path)):
+            return send_from_directory(frontend_dist, path)
+        index = os.path.join(frontend_dist, 'index.html')
+        if os.path.exists(index):
+            return send_from_directory(frontend_dist, 'index.html')
+        return {'error': 'Frontend not built. Run npm run build in frontend/'}, 404
+
     return app
 
