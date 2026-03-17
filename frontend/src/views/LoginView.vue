@@ -101,8 +101,11 @@ onMounted(async () => {
   let graphData, translations = {}
   try {
     let graphRes = await fetch('/production-graph.json')
-    if (!graphRes.ok) graphRes = await fetch('/demo-graph.json')
-    graphData = await graphRes.json()
+    try { graphData = await graphRes.json() } catch { graphData = null }
+    if (!graphData) {
+      graphRes = await fetch('/demo-graph.json')
+      graphData = await graphRes.json()
+    }
     try {
       const transRes = await fetch('/graph-translations.json')
       if (transRes.ok) {

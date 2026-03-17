@@ -220,8 +220,11 @@ onMounted(async () => {
   let graphData, translations = {}
   try {
     let gRes = await fetch('/production-graph.json')
-    if (!gRes.ok) gRes = await fetch('/demo-graph.json')
-    graphData = await gRes.json()
+    try { graphData = await gRes.json() } catch { graphData = null }
+    if (!graphData) {
+      gRes = await fetch('/demo-graph.json')
+      graphData = await gRes.json()
+    }
     try {
       const tRes = await fetch('/graph-translations.json')
       if (tRes.ok) { const allT = await tRes.json(); translations = allT[locale.value] || allT.en || {} }

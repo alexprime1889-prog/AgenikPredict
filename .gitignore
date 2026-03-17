@@ -95,6 +95,10 @@ AGENTS.md
 .claude/
 **/.claude/
 
+# Production data (excluded from GitHub, included in Railway via .railwayignore)
+frontend/public/production-graph.json
+frontend/public/graph-translations.json
+
 # Proprietary / commercial code (never publish)
 backend/app/api/billing.py
 backend/app/api/admin.py
