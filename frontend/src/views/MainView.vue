@@ -98,7 +98,7 @@ const router = useRouter()
 const isDark = ref(false)
 const initTheme = () => {
   const saved = localStorage.getItem('agenikpredict-theme')
-  isDark.value = saved === 'dark'
+  isDark.value = saved ? saved === 'dark' : true
   document.documentElement.classList.toggle('dark', isDark.value)
 }
 const toggleTheme = () => {

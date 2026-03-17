@@ -43,14 +43,21 @@ service.interceptors.response.use(
     return res
   },
   error => {
-    console.error('Response error:', error)
+    console.debug('Response error:', error)
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem('agenikpredict-token')
+      localStorage.removeItem('agenikpredict-user')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
+    }
     
-    // Handle timeout
     if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
       console.error('Request timeout')
     }
     
-    // Handle network error
     if (error.message === 'Network Error') {
       console.error('Network error - please check your connection')
     }
