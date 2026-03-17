@@ -14,7 +14,6 @@ from ..services.report_agent import ReportAgent, ReportManager, ReportStatus
 from ..services.simulation_manager import SimulationManager
 from ..models.project import ProjectManager
 from ..models.task import TaskManager, TaskStatus
-from ..models.user import get_user_billing_status
 from .auth import require_auth, optional_auth
 from ..utils.logger import get_logger
 
@@ -89,18 +88,6 @@ def generate_report():
         }
     """
     try:
-        # Check billing status if user is authenticated
-        user_id = getattr(g, 'user_id', None)
-        if user_id:
-            status = get_user_billing_status(user_id)
-            if not status['can_generate']:
-                return jsonify({
-                    "success": False,
-                    "error": "trial_expired",
-                    "message": "Your free trial has ended. Please add credits to continue generating reports.",
-                    "billing_status": status
-                }), 402
-
         data = request.get_json() or {}
 
         simulation_id = data.get('simulation_id')

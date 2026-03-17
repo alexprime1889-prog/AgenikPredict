@@ -80,13 +80,12 @@ def create_app(config_class=Config):
         logger.info("User database initialized, admin and demo accounts seeded")
 
     # Register blueprints
-    from .api import graph_bp, simulation_bp, report_bp, auth_bp, market_bp, billing_bp
+    from .api import graph_bp, simulation_bp, report_bp, auth_bp, market_bp
     app.register_blueprint(graph_bp, url_prefix='/api/graph')
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(market_bp, url_prefix='/api/market')
-    app.register_blueprint(billing_bp, url_prefix='/api/billing')
     
     # Health check
     @app.route('/health')

@@ -78,15 +78,6 @@ class Config:
     REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '2'))
     REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.5'))
 
-    # Stripe billing config
-    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
-    STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
-    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
-    STRIPE_PRICE_5 = os.environ.get('STRIPE_PRICE_5')
-    STRIPE_PRICE_20 = os.environ.get('STRIPE_PRICE_20')
-    STRIPE_PRICE_50 = os.environ.get('STRIPE_PRICE_50')
-    STRIPE_PRICE_100 = os.environ.get('STRIPE_PRICE_100')
-
     # Market data config
     TWELVE_DATA_API_KEY = os.environ.get('TWELVE_DATA_API_KEY')
 

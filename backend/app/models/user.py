@@ -52,9 +52,7 @@ def init_db():
                 plan TEXT DEFAULT 'explorer' CHECK(plan IN ('explorer', 'starter', 'pro', 'enterprise')),
                 created_at TEXT NOT NULL,
                 last_login_at TEXT,
-                is_active INTEGER DEFAULT 1,
-                trial_ends_at TEXT,
-                balance_cents INTEGER DEFAULT 0
+                is_active INTEGER DEFAULT 1
             );
 
             CREATE TABLE IF NOT EXISTS magic_links (
@@ -67,47 +65,18 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
 
-            CREATE TABLE IF NOT EXISTS usage_log (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                action_type TEXT NOT NULL,
-                input_tokens INTEGER DEFAULT 0,
-                output_tokens INTEGER DEFAULT 0,
-                total_tokens INTEGER DEFAULT 0,
-                estimated_cost_cents INTEGER DEFAULT 0,
-                report_id TEXT,
-                simulation_id TEXT,
-                model TEXT,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
             CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
             CREATE INDEX IF NOT EXISTS idx_magic_links_token ON magic_links(token);
             CREATE INDEX IF NOT EXISTS idx_magic_links_expires ON magic_links(expires_at);
-            CREATE INDEX IF NOT EXISTS idx_usage_log_user ON usage_log(user_id);
-            CREATE INDEX IF NOT EXISTS idx_usage_log_created ON usage_log(created_at);
         """)
-
-        # Migrate existing databases: add new columns if missing
-        _migrate_add_column(conn, 'users', 'trial_ends_at', 'TEXT')
-        _migrate_add_column(conn, 'users', 'balance_cents', 'INTEGER DEFAULT 0')
 
     logger.info("User database initialized")
 
 
-def _migrate_add_column(conn, table, column, col_type):
-    """Safely add a column to an existing table (no-op if already exists)"""
-    try:
-        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
-        logger.info(f"Migration: added {column} to {table}")
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
-
-
-def seed_admin(email="alex@manogrand.ai", name="Alex", plan="pro"):
+def seed_admin(email=None, name="Alex", plan="pro"):
     """Seed the admin account if it doesn't exist"""
+    if email is None:
+        email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
     with get_db() as conn:
         existing = conn.execute(
             "SELECT id FROM users WHERE email = ?", (email,)
@@ -120,12 +89,10 @@ def seed_admin(email="alex@manogrand.ai", name="Alex", plan="pro"):
         user_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
-        # Admins get no trial restriction (can_generate is always true for admins)
-        trial_ends_at = now_iso
         conn.execute(
-            "INSERT INTO users (id, email, name, role, plan, created_at, trial_ends_at, balance_cents) "
-            "VALUES (?, ?, ?, 'admin', ?, ?, ?, 0)",
-            (user_id, email, name, plan, now_iso, trial_ends_at)
+            "INSERT INTO users (id, email, name, role, plan, created_at) "
+            "VALUES (?, ?, ?, 'admin', ?, ?)",
+            (user_id, email, name, plan, now_iso)
         )
         logger.info(f"Admin account created: {email} (id={user_id})")
         return user_id
@@ -144,11 +111,10 @@ def seed_demo(email="demo@agenikpredict.com", name="Demo User"):
         user_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
-        trial_ends_at = (now + timedelta(days=2)).isoformat()
         conn.execute(
-            "INSERT INTO users (id, email, name, role, plan, created_at, trial_ends_at, balance_cents) "
-            "VALUES (?, ?, ?, 'demo', 'explorer', ?, ?, 0)",
-            (user_id, email, name, now_iso, trial_ends_at)
+            "INSERT INTO users (id, email, name, role, plan, created_at) "
+            "VALUES (?, ?, ?, 'demo', 'explorer', ?)",
+            (user_id, email, name, now_iso)
         )
         logger.info(f"Demo account created: {email}")
         return user_id
@@ -175,20 +141,19 @@ def get_user_by_id(user_id):
 
 
 def create_user(email, name="", plan="explorer"):
-    """Create a new user with a 2-day trial period"""
+    """Create a new user"""
     email = email.lower().strip()
     user_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat()
-    trial_ends_at = (now + timedelta(days=2)).isoformat()
 
     with get_db() as conn:
         conn.execute(
-            "INSERT INTO users (id, email, name, role, plan, created_at, trial_ends_at, balance_cents) "
-            "VALUES (?, ?, ?, 'user', ?, ?, ?, 0)",
-            (user_id, email, name, plan, now_iso, trial_ends_at)
+            "INSERT INTO users (id, email, name, role, plan, created_at) "
+            "VALUES (?, ?, ?, 'user', ?, ?)",
+            (user_id, email, name, plan, now_iso)
         )
-    logger.info(f"User created: {email} (id={user_id}, trial_ends_at={trial_ends_at})")
+    logger.info(f"User created: {email} (id={user_id})")
     return get_user_by_id(user_id)
 
 
@@ -259,149 +224,13 @@ def cleanup_expired_links():
         )
 
 
-# ── Trial & Billing ──
-
-def is_in_trial(user_id):
-    """Check if the user is currently in their trial period"""
-    user = get_user_by_id(user_id)
-    if not user or not user.get('trial_ends_at'):
-        return False
-    try:
-        trial_end = datetime.fromisoformat(user['trial_ends_at'])
-        if trial_end.tzinfo is None:
-            trial_end = trial_end.replace(tzinfo=timezone.utc)
-        return datetime.now(timezone.utc) < trial_end
-    except (ValueError, TypeError):
-        return False
-
-
 def get_user_billing_status(user_id):
     """
-    Get comprehensive billing status for a user.
-    Returns dict with trial info, balance, and generation eligibility.
+    Get billing status for a user.
+    Open-source version: generation is always allowed.
     """
     user = get_user_by_id(user_id)
     if not user:
-        return {
-            'is_trial': False,
-            'trial_ends_at': None,
-            'trial_days_left': 0,
-            'balance_cents': 0,
-            'can_generate': False,
-        }
+        return {'can_generate': False}
 
-    trial_ends_at = user.get('trial_ends_at')
-    balance_cents = user.get('balance_cents') or 0
-    in_trial = False
-    trial_days_left = 0
-
-    if trial_ends_at:
-        try:
-            trial_end = datetime.fromisoformat(trial_ends_at)
-            if trial_end.tzinfo is None:
-                trial_end = trial_end.replace(tzinfo=timezone.utc)
-            now = datetime.now(timezone.utc)
-            if now < trial_end:
-                in_trial = True
-                delta = trial_end - now
-                trial_days_left = max(0, delta.days + (1 if delta.seconds > 0 else 0))
-        except (ValueError, TypeError):
-            pass
-
-    # Admins can always generate
-    is_admin = user.get('role') == 'admin'
-    can_generate = is_admin or in_trial or balance_cents > 0
-
-    return {
-        'is_trial': in_trial,
-        'trial_ends_at': trial_ends_at,
-        'trial_days_left': trial_days_left,
-        'balance_cents': balance_cents,
-        'can_generate': can_generate,
-    }
-
-
-# ── Balance Management ──
-
-def get_balance(user_id):
-    """Get current balance in cents"""
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT balance_cents FROM users WHERE id = ?", (user_id,)
-        ).fetchone()
-        return row['balance_cents'] if row else 0
-
-
-def add_credits(user_id, amount_cents):
-    """Add credits to user balance (after Stripe payment)"""
-    with get_db() as conn:
-        conn.execute(
-            "UPDATE users SET balance_cents = balance_cents + ? WHERE id = ?",
-            (amount_cents, user_id)
-        )
-    logger.info(f"Credits added: user={user_id}, amount_cents={amount_cents}")
-
-
-def deduct_credits(user_id, amount_cents):
-    """Deduct credits after report generation"""
-    with get_db() as conn:
-        conn.execute(
-            "UPDATE users SET balance_cents = MAX(0, balance_cents - ?) WHERE id = ?",
-            (amount_cents, user_id)
-        )
-    logger.info(f"Credits deducted: user={user_id}, amount_cents={amount_cents}")
-
-
-# ── Usage Logging ──
-
-def log_usage(user_id, action_type, input_tokens, output_tokens, model,
-              report_id=None, simulation_id=None):
-    """
-    Log token usage for billing.
-    Cost model: Claude Sonnet input=$3/1M, output=$15/1M, + 20% markup.
-    """
-    total_tokens = input_tokens + output_tokens
-    input_cost = (input_tokens / 1_000_000) * 3.00 * 1.20
-    output_cost = (output_tokens / 1_000_000) * 15.00 * 1.20
-    total_cost_cents = int((input_cost + output_cost) * 100)
-
-    entry_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
-
-    with get_db() as conn:
-        conn.execute(
-            "INSERT INTO usage_log "
-            "(id, user_id, action_type, input_tokens, output_tokens, total_tokens, "
-            "estimated_cost_cents, report_id, simulation_id, model, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (entry_id, user_id, action_type, input_tokens, output_tokens,
-             total_tokens, total_cost_cents, report_id, simulation_id, model, now)
-        )
-    logger.info(
-        f"Usage logged: user={user_id}, action={action_type}, "
-        f"tokens={total_tokens}, cost_cents={total_cost_cents}"
-    )
-    return total_cost_cents
-
-
-def get_user_usage(user_id, days=30):
-    """Get usage history for a user within the last N days"""
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-    with get_db() as conn:
-        rows = conn.execute(
-            "SELECT * FROM usage_log WHERE user_id = ? AND created_at > ? "
-            "ORDER BY created_at DESC",
-            (user_id, cutoff)
-        ).fetchall()
-        return [dict(r) for r in rows]
-
-
-def get_user_total_cost(user_id):
-    """Get total cost in cents for a user (all time)"""
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT COALESCE(SUM(estimated_cost_cents), 0) as total "
-            "FROM usage_log WHERE user_id = ?",
-            (user_id,)
-        ).fetchone()
-        return row['total'] if row else 0
+    return {'can_generate': True}

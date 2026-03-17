@@ -22,7 +22,6 @@ from . import auth_bp
 from ..models.user import (
     get_user_by_email, get_user_by_id, create_user,
     create_magic_link, verify_magic_link, seed_demo,
-    is_in_trial, get_user_billing_status, get_user_usage,
 )
 from ..services.email_service import send_magic_link_email
 from ..utils.logger import get_logger
@@ -49,8 +48,7 @@ def _b64url_decode(s: str) -> bytes:
     return base64.urlsafe_b64decode(s)
 
 
-def create_jwt(user_id: str, email: str, role: str, plan: str,
-               trial_ends_at: str | None = None, in_trial: bool = False) -> str:
+def create_jwt(user_id: str, email: str, role: str, plan: str) -> str:
     """Create a simple HS256 JWT"""
     header = _b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
     payload = _b64url_encode(json.dumps({
@@ -58,8 +56,6 @@ def create_jwt(user_id: str, email: str, role: str, plan: str,
         "email": email,
         "role": role,
         "plan": plan,
-        "trial_ends_at": trial_ends_at,
-        "is_trial": in_trial,
         "iat": int(time.time()),
         "exp": int(time.time()) + JWT_TTL,
     }).encode())
@@ -187,11 +183,8 @@ def verify_token():
     if not user:
         return jsonify({"success": False, "error": "Invalid or expired link. Please request a new one."}), 401
 
-    in_trial = is_in_trial(user['id'])
     jwt_token = create_jwt(
         user['id'], user['email'], user['role'], user['plan'],
-        trial_ends_at=user.get('trial_ends_at'),
-        in_trial=in_trial,
     )
 
     return jsonify({
@@ -203,8 +196,6 @@ def verify_token():
             "name": user['name'],
             "role": user['role'],
             "plan": user['plan'],
-            "trial_ends_at": user.get('trial_ends_at'),
-            "is_trial": in_trial,
         },
     })
 
@@ -237,11 +228,8 @@ def demo_login():
     demo_id = seed_demo()
     user = get_user_by_id(demo_id)
 
-    in_trial = is_in_trial(user['id'])
     jwt_token = create_jwt(
         user['id'], user['email'], user['role'], user['plan'],
-        trial_ends_at=user.get('trial_ends_at'),
-        in_trial=in_trial,
     )
 
     return jsonify({
@@ -253,23 +241,5 @@ def demo_login():
             "name": user['name'],
             "role": user['role'],
             "plan": user['plan'],
-            "trial_ends_at": user.get('trial_ends_at'),
-            "is_trial": in_trial,
         },
     })
-
-
-@auth_bp.route('/billing-status', methods=['GET'])
-@require_auth
-def billing_status():
-    """Get billing status for the current authenticated user"""
-    status = get_user_billing_status(g.user_id)
-    return jsonify({"success": True, "data": status})
-
-
-@auth_bp.route('/usage', methods=['GET'])
-@require_auth
-def get_usage():
-    """Get usage history for the current authenticated user (last 30 days)"""
-    usage = get_user_usage(g.user_id, days=30)
-    return jsonify({"success": True, "data": usage})
