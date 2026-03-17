@@ -5,7 +5,7 @@
   "hero.version": "/ v0.1-תצוגה מקדימה",
   "hero.title.line1": "העלו כל דבר.",
   "hero.title.line2": "גלו מה העולם חושב.",
-  "hero.desc": "העלו מסמך, הדביקו קישור או שתפו סרטון \u2014 {brand} יוצר {agentCount} עם אישיויות ייחודיות ומפעיל אותם בטוויטר ורדיט מדומים. תוך דקות תקבלו דוח מלא: סנטימנט, סיכונים, פוטנציאל ויראלי והמלצות לפעולה.",
+  "hero.desc": "העלו מסמך, הדביקו קישור או שתפו סרטון — {brand} יוצר {agentCount} עם אישיויות ייחודיות ומפעיל אותם בטוויטר ורדיט מדומים. תוך דקות תקבלו דוח מלא: סנטימנט, סיכונים, פוטנציאל ויראלי והמלצות לפעולה.",
   "hero.agentCount": "עד 1,000 סוכני AI",
   "hero.optimalSolution": "האסטרטגיה האופטימלית",
   "hero.slogan": "אל תנחשו את העתיד. תרגלו אותו.",
@@ -29,7 +29,7 @@
   "steps.interactionDesc": "שוחחו עם כל ישות בעולם המדומה ושוחחו עם ReportAgent",
   "console.realitySeed": "01 / חומר המקור שלכם",
   "console.supportedFormats": "PDF, TXT, תמונות, וידאו, URL, YouTube",
-  "console.supportedFormatsLong": "מסמכים \u00B7 תמונות \u00B7 וידאו \u00B7 אתרים \u00B7 YouTube",
+  "console.supportedFormatsLong": "מסמכים · תמונות · וידאו · אתרים · YouTube",
   "console.inputParams": "פרמטרי קלט",
   "console.simulationPrompt": ">_ 02 / הנחיית סימולציה",
   "console.placeholder": "// הזינו דרישות סימולציה או חיזוי בשפה טבעית (לדוגמה: מה תהיה מגמת דעת הקהל אם אוניברסיטה X תפרסם הצהרה Y?)",
@@ -39,7 +39,7 @@
   "upload.dragFiles": "גררו לכאן קבצים, תמונות או סרטונים",
   "upload.browseFiles": "או לחצו לעיון",
   "upload.urlPlaceholder": "הדביקו כל כתובת URL או קישור YouTube",
-  "upload.acceptsLabel": "מקבלים הכול: דוחות, מאמרים, סרטונים, אתרים \u2014 אפילו פסקה בודדת.",
+  "upload.acceptsLabel": "מקבלים הכול: דוחות, מאמרים, סרטונים, אתרים — אפילו פסקה בודדת.",
   "view.graph": "גרף",
   "view.split": "מפוצל",
   "view.workbench": "סביבת עבודה",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "זיכרון קצר/ארוך טווח של GraphRAG מתעדכן בזמן אמת",
   "graph.liveUpdating": "מתעדכן בזמן אמת...",
   "graph.processingHint": "חלק מהתוכן עדיין בעיבוד, נסו לרענן את הגרף מאוחר יותר",
   "graph.closeHint": "סגור רמז",
   "graph.waitingOntology": "ממתין ליצירת אונטולוגיה...",
-
   "history.sectionTitle": "היסטוריית סימולציות",
   "history.moreFiles": "+{count} קבצים",
   "history.noFiles": "אין קבצים",
@@ -204,7 +202,6 @@
   "history.envSetup": "הגדרת סביבה",
   "history.analysisReport": "דוח ניתוח",
   "history.playbackHint": "שלב 3 \"התחל סימולציה\" ושלב 5 \"אינטראקציה עמוקה\" חייבים להיות מופעלים תוך כדי ריצה ואינם תומכים בהשמעה חוזרת",
-
   "step1.ontologyGeneration": "יצירת אונטולוגיה",
   "step1.completed": "הושלם",
   "step1.pending": "ממתין",
@@ -230,7 +227,6 @@
   "step1.relationLabel": "קשר",
   "status.error": "שגיאה",
   "status.stepOf": "שלב {current}/{total}",
-
   "step2.simInstanceInit": "אתחול מופע סימולציה",
   "step2.initialized": "אותחל",
   "step2.simInstanceDesc": "יצירת מופע סימולציה חדש, משיכת תבניות פרמטרים לעולם הסימולציה",
@@ -312,10 +308,8 @@
   "step2.uniqueMemoryDesc": "זיכרונות שנוצרו בהתבסס על זרעי מציאות",
   "step2.socialNetwork": "רשת קשרים חברתיים",
   "step2.socialNetworkDesc": "קשרים אישיים וגרף אינטראקציות",
-
   "step3.starting": "מתחיל...",
   "step3.generateReport": "התחל יצירת דוח",
-
   "step5.chatWithReportAgent": "שוחח עם סוכן הדוחות",
   "step5.chatWithAnyAgent": "שוחח עם כל סוכן בעולם",
   "step5.selectChatTarget": "בחר יעד שיחה",
@@ -343,7 +337,6 @@
   "step5.selectAll": "בחר הכל",
   "step5.clearSelection": "נקה",
   "step5.generatingSection": "מייצר {title}...",
-
   "graph.demo.n1": "תיק שוק",
   "graph.demo.n2": "אנליסט",
   "graph.demo.n3": "רו״ח",
@@ -365,9 +358,8 @@
   "graph.demo.type.Output": "תוצר",
   "graph.demo.type.Entity": "ישות",
   "graph.demo.type.Actor": "שחקן",
-
   "auth.signIn": "התחברות",
-  "auth.enterEmail": "הזינו את האימייל שלכם \u2014 נשלח לכם קישור להתחברות מיידית.",
+  "auth.enterEmail": "הזינו את האימייל שלכם — נשלח לכם קישור להתחברות מיידית.",
   "auth.emailPlaceholder": "את{'@'}חברה.com",
   "auth.sendLink": "שליחת קישור",
   "auth.sending": "שולח...",
@@ -383,10 +375,9 @@
   "auth.signedIn": "!התחברתם",
   "auth.redirecting": "...מעבירים ל-AgenikPredict",
   "auth.logout": "התנתקות",
+  "auth.loginTagline": "הכוח לראות את המחר — זמין כבר היום.",
   "auth.loginSlogan": "ראו את המחר.\nהחליטו היום.",
-
   "console.enrichMarketData": "העשרה בנתוני שוק בזמן אמת",
-
   "billing.balance": "יתרה",
   "billing.trialDaysLeft": "נותרו {days} ימים בתקופת הניסיון",
   "billing.trialExpired": "תקופת הניסיון הסתיימה",
@@ -398,5 +389,11 @@
   "billing.usageHistory": "היסטוריית שימוש",
   "billing.freeTrialBadge": "חינם (ניסיון)",
   "billing.estimatedReportCost": "עלות משוערת ~$1-2 לדוח",
-  "billing.addCreditsToGenerate": "הוסיפו קרדיטים כדי ליצור"
+  "billing.addCreditsToGenerate": "הוסיפו קרדיטים כדי ליצור",
+  "home.welcome": "ברוך שובך, {name}",
+  "home.dropFiles": "גרור קבצים או עיין",
+  "home.formats": "PDF · תמונות · וידאו · URL · YouTube",
+  "home.takePhoto": "צלם תמונה",
+  "home.browseFiles": "עיין בקבצים",
+  "home.promptPlaceholder": "מה ברצונך לחזות?"
 }

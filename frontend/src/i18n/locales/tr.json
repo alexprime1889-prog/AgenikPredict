@@ -64,7 +64,7 @@
   "step1.phase.build": "Graf Oluşturma",
   "step1.phase.complete": "Oluşturma Tamamlandı",
   "step1.uploading": "Belgeler yükleniyor ve analiz ediliyor...",
-  "step1.generating": "Ontoloji yapısı üretiliyor...",
+  "step1.generating": "Üretiliyor",
   "step1.building": "Bilgi grafı oluşturuluyor...",
   "step1.complete": "Bilgi grafı oluşturma tamamlandı",
   "step1.nextStep": "Sonraki Adım",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "GraphRAG uzun/kısa vadeli bellek gerçek zamanlı güncelleniyor",
   "graph.liveUpdating": "Gerçek zamanlı güncelleniyor...",
   "graph.processingHint": "Bazı içerikler hâlâ işleniyor, grafı daha sonra yenilemeyi deneyin",
   "graph.closeHint": "İpucunu kapat",
   "graph.waitingOntology": "Ontoloji üretimi bekleniyor...",
-
   "history.sectionTitle": "Simülasyon Geçmişi",
   "history.moreFiles": "+{count} dosya",
   "history.noFiles": "Dosya yok",
@@ -204,10 +202,8 @@
   "history.envSetup": "Ortam Kurulumu",
   "history.analysisReport": "Analiz Raporu",
   "history.playbackHint": "Adım 3 \"Simülasyonu Başlat\" ve Adım 5 \"Derin Etkileşim\" yalnızca çalışırken başlatılabilir ve geçmiş kaydını desteklemez",
-
   "step1.ontologyGeneration": "Ontoloji Üretimi",
   "step1.completed": "Tamamlandı",
-  "step1.generating": "Üretiliyor",
   "step1.pending": "Beklemede",
   "step1.ontologyDesc": "LLM belge içeriğini ve simülasyon gereksinimlerini analiz eder, gerçeklik tohumlarını çıkarır ve uygun ontoloji yapısını otomatik olarak üretir",
   "step1.analyzingDocs": "Belgeler analiz ediliyor...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "İlişki",
   "status.error": "Hata",
   "status.stepOf": "Adım {current}/{total}",
-
   "step2.simInstanceInit": "Simülasyon Örneği Başlatma",
   "step2.initialized": "Başlatıldı",
   "step2.simInstanceDesc": "Yeni bir simülasyon örneği oluşturun, simülasyon dünyası parametre şablonlarını çekin",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Gerçeklik tohumlarına dayalı oluşturulan anılar",
   "step2.socialNetwork": "Sosyal İlişki Ağı",
   "step2.socialNetworkDesc": "Bireysel bağlantılar ve etkileşim grafı",
-
   "step3.starting": "Başlatılıyor...",
   "step3.generateReport": "Rapor Oluşturmayı Başlat",
-
   "step5.chatWithReportAgent": "Report Agent ile Sohbet",
   "step5.chatWithAnyAgent": "Dünyadaki herhangi bir ajanla sohbet edin",
   "step5.selectChatTarget": "Sohbet hedefi seçin",
@@ -344,7 +337,6 @@
   "step5.selectAll": "Tümünü Seç",
   "step5.clearSelection": "Temizle",
   "step5.generatingSection": "{title} oluşturuluyor...",
-
   "graph.demo.n1": "Pazar Vakası",
   "graph.demo.n2": "Analist",
   "graph.demo.n3": "Mali Müşavir",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "Çıktı",
   "graph.demo.type.Entity": "Varlık",
   "graph.demo.type.Actor": "Aktör",
-
   "auth.signIn": "Giriş yapın",
   "auth.enterEmail": "E-posta adresinizi girin, anında giriş yapmanız için size sihirli bir bağlantı göndereceğiz.",
   "auth.emailPlaceholder": "siz{'@'}sirket.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "Giriş yaptınız!",
   "auth.redirecting": "AGENIKPREDICT'e yönlendiriliyorsunuz...",
   "auth.logout": "Çıkış yap",
+  "auth.loginTagline": "Yarını görme gücü — bugün mevcut.",
   "auth.loginSlogan": "Yarını görün.\nBugün karar verin.",
-
   "console.enrichMarketData": "Canlı piyasa verileriyle zenginleştir",
-
   "billing.balance": "Bakiye",
   "billing.trialDaysLeft": "Deneme süresinde {days} gün kaldı",
   "billing.trialExpired": "Deneme süresi doldu",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "Kullanım geçmişi",
   "billing.freeTrialBadge": "Ücretsiz (Deneme)",
   "billing.estimatedReportCost": "Tahmini rapor başına ~$1-2",
-  "billing.addCreditsToGenerate": "Oluşturmak için kredi ekleyin"
+  "billing.addCreditsToGenerate": "Oluşturmak için kredi ekleyin",
+  "home.welcome": "Tekrar hoş geldin, {name}",
+  "home.dropFiles": "Dosyaları sürükle veya gözat",
+  "home.formats": "PDF · Görseller · Video · URL · YouTube",
+  "home.takePhoto": "Fotoğraf çek",
+  "home.browseFiles": "Dosyalara göz at",
+  "home.promptPlaceholder": "Ne tahmin etmek istiyorsun?"
 }

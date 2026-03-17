@@ -64,7 +64,7 @@
   "step1.phase.build": "Construction du graphe",
   "step1.phase.complete": "Construction terminée",
   "step1.uploading": "Import et analyse des documents en cours...",
-  "step1.generating": "Génération de la structure ontologique...",
+  "step1.generating": "En cours de génération",
   "step1.building": "Construction du graphe de connaissances...",
   "step1.complete": "Construction du graphe de connaissances terminée",
   "step1.nextStep": "Étape suivante",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "Mise à jour en temps réel de la mémoire à court/long terme GraphRAG",
   "graph.liveUpdating": "Mise à jour en temps réel...",
   "graph.processingHint": "Certains contenus sont encore en cours de traitement, essayez d'actualiser le graphe ultérieurement",
   "graph.closeHint": "Fermer l'indication",
   "graph.waitingOntology": "En attente de la génération de l'ontologie...",
-
   "history.sectionTitle": "Historique des simulations",
   "history.moreFiles": "+{count} fichiers",
   "history.noFiles": "Aucun fichier",
@@ -204,10 +202,8 @@
   "history.envSetup": "Config. environnement",
   "history.analysisReport": "Rapport d'analyse",
   "history.playbackHint": "L'étape 3 « Lancer la simulation » et l'étape 5 « Interaction approfondie » doivent être lancées en temps réel et ne prennent pas en charge la relecture de l'historique",
-
   "step1.ontologyGeneration": "Génération de l'ontologie",
   "step1.completed": "Terminé",
-  "step1.generating": "En cours de génération",
   "step1.pending": "En attente",
   "step1.ontologyDesc": "Le LLM analyse le contenu des documents et les exigences de simulation, extrait les graines de réalité et génère automatiquement la structure ontologique appropriée",
   "step1.analyzingDocs": "Analyse des documents...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "Relation",
   "status.error": "Erreur",
   "status.stepOf": "Étape {current}/{total}",
-
   "step2.simInstanceInit": "Initialisation de l'instance de simulation",
   "step2.initialized": "Initialisé",
   "step2.simInstanceDesc": "Créer une nouvelle instance de simulation, récupérer les modèles de paramètres du monde simulé",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Souvenirs formés à partir des graines de réalité",
   "step2.socialNetwork": "Réseau de relations sociales",
   "step2.socialNetworkDesc": "Connexions individuelles et graphe d'interactions",
-
   "step3.starting": "Démarrage...",
   "step3.generateReport": "Lancer la génération du rapport",
-
   "step5.chatWithReportAgent": "Discuter avec Report Agent",
   "step5.chatWithAnyAgent": "Discuter avec n'importe quel agent du monde",
   "step5.selectChatTarget": "Sélectionnez un interlocuteur",
@@ -344,7 +337,6 @@
   "step5.selectAll": "Tout sélectionner",
   "step5.clearSelection": "Effacer",
   "step5.generatingSection": "Génération de {title}...",
-
   "graph.demo.n1": "Étude de marché",
   "graph.demo.n2": "Analyste",
   "graph.demo.n3": "Expert-comptable",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "Résultat",
   "graph.demo.type.Entity": "Entité",
   "graph.demo.type.Actor": "Acteur",
-
   "auth.signIn": "Se connecter",
   "auth.enterEmail": "Saisissez votre adresse e-mail et nous vous enverrons un lien magique pour vous connecter instantanément.",
   "auth.emailPlaceholder": "vous{'@'}entreprise.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "Vous êtes connecté !",
   "auth.redirecting": "Redirection vers AgenikPredict...",
   "auth.logout": "Se déconnecter",
+  "auth.loginTagline": "Le pouvoir de voir demain — disponible aujourdu0027hui.",
   "auth.loginSlogan": "Voyez demain.\nDécidez aujourd'hui.",
-
   "console.enrichMarketData": "Enrichir avec des données de marché en direct",
-
   "billing.balance": "Solde",
   "billing.trialDaysLeft": "{days} jours restants d'essai",
   "billing.trialExpired": "Essai expire",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "Historique d'utilisation",
   "billing.freeTrialBadge": "Gratuit (Essai)",
   "billing.estimatedReportCost": "Estime ~1-2 $ par rapport",
-  "billing.addCreditsToGenerate": "Ajoutez des credits pour generer"
+  "billing.addCreditsToGenerate": "Ajoutez des credits pour generer",
+  "home.welcome": "Bienvenue, {name}",
+  "home.dropFiles": "Déposez des fichiers ou parcourez",
+  "home.formats": "PDF · Images · Vidéo · URL · YouTube",
+  "home.takePhoto": "Prendre une photo",
+  "home.browseFiles": "Parcourir les fichiers",
+  "home.promptPlaceholder": "Que voulez-vous prédire ?"
 }

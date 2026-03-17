@@ -62,29 +62,145 @@
         </button>
       </div>
       </div>
+      <p class="login-tagline">{{ $t('auth.loginTagline') }}</p>
       <p class="footer-text">
         &copy; {{ new Date().getFullYear() }} Manogrand Inc
       </p>
     </div>
 
-    <!-- Right: Graph + slogan -->
+    <!-- Right: Full 3D graph playground -->
     <div class="login-right">
-      <div class="login-sphere-mask"></div>
-      <HeroGraphPreview class="login-graph" />
-      <p class="login-slogan">{{ $t('auth.loginSlogan') }}</p>
+      <div ref="graphMount" class="login-3d-graph"></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { requestMagicLink, demoLogin } from '../store/auth'
 import BorderBeam from '../components/magicui/BorderBeam.vue'
-import HeroGraphPreview from '../components/HeroGraphPreview.vue'
+import ForceGraph3D from '3d-force-graph'
+import SpriteText from 'three-spritetext'
+import * as THREE from 'three'
 
 const router = useRouter()
 const email = ref('')
+const graphMount = ref(null)
+let graphInstance = null
+
+const COLORS = {
+  Person: '#FF6B35', Investor: '#004E89', Company: '#7B2D8E',
+  Founder: '#1A936F', FinancialInstitution: '#C5283D',
+  GovernmentAgency: '#E9724C', Entity: '#3498db'
+}
+
+onMounted(async () => {
+  if (!graphMount.value) return
+
+  let graphData, translations = {}
+  try {
+    let graphRes = await fetch('/production-graph.json')
+    if (!graphRes.ok) graphRes = await fetch('/demo-graph.json')
+    graphData = await graphRes.json()
+    try {
+      const transRes = await fetch('/graph-translations.json')
+      if (transRes.ok) {
+        const allTrans = await transRes.json()
+        const currentLocale = localStorage.getItem('agenikpredict-locale') || 'en'
+        translations = allTrans[currentLocale] || allTrans.en || {}
+      }
+    } catch {}
+  } catch (e) {
+    console.error('Graph load failed:', e)
+    return
+  }
+
+  const data = graphData.data || graphData
+  const nodesRaw = data.nodes || []
+  const edgesRaw = data.edges || []
+
+  const nodes = []
+  const links = []
+  const nodeMap = new Map()
+
+  for (const n of nodesRaw) {
+    const type = n.labels?.find(l => l !== 'Entity') || 'Entity'
+    const originalName = n.name || 'Unnamed'
+    const node = { id: n.uuid, name: translations[originalName] || originalName, type, val: 1 }
+    nodeMap.set(n.uuid, node)
+    nodes.push(node)
+  }
+
+  const nodeIds = new Set(nodes.map(n => n.id))
+
+  for (const e of edgesRaw) {
+    if (nodeIds.has(e.source_node_uuid) && nodeIds.has(e.target_node_uuid)) {
+      links.push({ source: e.source_node_uuid, target: e.target_node_uuid, name: e.name || '' })
+      const src = nodeMap.get(e.source_node_uuid)
+      const tgt = nodeMap.get(e.target_node_uuid)
+      if (src) src.val += 0.5
+      if (tgt) tgt.val += 0.5
+    }
+  }
+
+  const el = graphMount.value
+  const width = el.clientWidth
+  const height = el.clientHeight
+
+  graphInstance = ForceGraph3D()(el)
+    .width(width)
+    .height(height)
+    .graphData({ nodes, links })
+    .backgroundColor('rgba(0,0,0,0)')
+    .showNavInfo(false)
+    .nodeThreeObject(node => {
+      const color = COLORS[node.type] || '#999'
+      const radius = Math.max(3, Math.sqrt(node.val) * 2.5)
+      const group = new THREE.Group()
+      group.add(new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 20, 20),
+        new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.9 })
+      ))
+      group.add(new THREE.Mesh(
+        new THREE.SphereGeometry(radius * 1.5, 16, 16),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.12 })
+      ))
+      const label = new SpriteText(node.name.length > 12 ? node.name.slice(0, 10) + '…' : node.name)
+      label.color = '#E0E0E0'
+      label.textHeight = 3
+      label.position.set(0, -(radius + 5), 0)
+      label.backgroundColor = false
+      group.add(label)
+      return group
+    })
+    .nodeLabel(() => '')
+    .linkColor(() => 'rgba(255,255,255,0.15)')
+    .linkWidth(0.5)
+    .linkOpacity(0.5)
+    .onNodeClick(() => {})
+    .enableNodeDrag(false)
+    .d3AlphaDecay(0.03)
+    .d3VelocityDecay(0.25)
+    .warmupTicks(100)
+    .cooldownTicks(0)
+
+  graphInstance.controls().autoRotate = true
+  graphInstance.controls().autoRotateSpeed = 0.6
+  graphInstance.controls().enableZoom = true
+  graphInstance.controls().enablePan = false
+
+  setTimeout(() => {
+    if (graphInstance) graphInstance.cameraPosition({ x: 0, y: 0, z: 280 })
+  }, 500)
+})
+
+onUnmounted(() => {
+  if (graphInstance) {
+    graphInstance._destructor?.()
+    graphInstance = null
+  }
+})
 const step = ref('email')
 const loading = ref(false)
 const error = ref(null)
@@ -166,23 +282,28 @@ async function loginAsDemo() {
   background-image: radial-gradient(circle at center 60%, #ffbd7a, transparent 60%);
 }
 
-.login-graph {
-  width: 90%;
-  max-width: 500px;
-  height: 400px;
+.login-3d-graph {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
 }
 
 .login-slogan {
-  margin-top: 40px;
-  font-size: 28px;
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  font-size: 24px;
   font-weight: 600;
   color: #fff;
   text-align: center;
   line-height: 1.3;
   letter-spacing: -0.5px;
   white-space: pre-line;
-  z-index: 1;
+  z-index: 2;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
 }
 
 .login-card {
@@ -398,10 +519,20 @@ async function loginAsDemo() {
   animation: pulse 1.5s infinite;
 }
 
+.login-tagline {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+  max-width: 300px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
 .footer-text {
   font-size: 12px;
   color: #444;
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 @keyframes pulse {

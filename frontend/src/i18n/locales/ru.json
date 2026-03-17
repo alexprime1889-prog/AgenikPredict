@@ -5,7 +5,7 @@
   "hero.version": "/ v0.1-Превью",
   "hero.title.line1": "Загрузите что угодно.",
   "hero.title.line2": "Узнайте, что скажет мир.",
-  "hero.desc": "Загрузите документ, вставьте ссылку или поделитесь видео \u2014 {brand} создаст {agentCount} с уникальными личностями и запустит их обсуждение в симулированных Twitter и Reddit. Через несколько минут вы получите полный отчёт: тональность, риски, вирусный потенциал и рекомендации к действию.",
+  "hero.desc": "Загрузите документ, вставьте ссылку или поделитесь видео — {brand} создаст {agentCount} с уникальными личностями и запустит их обсуждение в симулированных Twitter и Reddit. Через несколько минут вы получите полный отчёт: тональность, риски, вирусный потенциал и рекомендации к действию.",
   "hero.agentCount": "до 1 000 ИИ-агентов",
   "hero.optimalSolution": "оптимальную стратегию",
   "hero.slogan": "Не гадайте о будущем. Прорепетируйте его.",
@@ -29,7 +29,7 @@
   "steps.interactionDesc": "Общайтесь с любой сущностью в симулированном мире и беседуйте с ReportAgent",
   "console.realitySeed": "01 / Ваш исходный материал",
   "console.supportedFormats": "PDF, TXT, Изображения, Видео, URL, YouTube",
-  "console.supportedFormatsLong": "Документы \u00B7 Изображения \u00B7 Видео \u00B7 Сайты \u00B7 YouTube",
+  "console.supportedFormatsLong": "Документы · Изображения · Видео · Сайты · YouTube",
   "console.inputParams": "Входные параметры",
   "console.simulationPrompt": ">_ 02 / Промпт симуляции",
   "console.placeholder": "// Введите требования к симуляции или предсказанию на естественном языке (например: Какой тренд общественного мнения возникнет, если университет X опубликует заявление Y?)",
@@ -39,7 +39,7 @@
   "upload.dragFiles": "Перетащите файлы, изображения или видео сюда",
   "upload.browseFiles": "или нажмите для выбора",
   "upload.urlPlaceholder": "Вставьте любой URL или ссылку на YouTube",
-  "upload.acceptsLabel": "Принимаем всё: отчёты, статьи, видео, сайты \u2014 даже один абзац текста.",
+  "upload.acceptsLabel": "Принимаем всё: отчёты, статьи, видео, сайты — даже один абзац текста.",
   "view.graph": "Граф",
   "view.split": "Разделение",
   "view.workbench": "Рабочее пространство",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "Долго-/краткосрочная память GraphRAG обновляется в реальном времени",
   "graph.liveUpdating": "Обновление в реальном времени...",
   "graph.processingHint": "Часть контента ещё обрабатывается, попробуйте обновить граф позже",
   "graph.closeHint": "Закрыть подсказку",
   "graph.waitingOntology": "Ожидание генерации онтологии...",
-
   "history.sectionTitle": "История симуляций",
   "history.moreFiles": "+{count} файлов",
   "history.noFiles": "Нет файлов",
@@ -204,7 +202,6 @@
   "history.envSetup": "Настройка среды",
   "history.analysisReport": "Аналитический отчёт",
   "history.playbackHint": "Шаг 3 \"Запуск симуляции\" и Шаг 5 \"Глубокое взаимодействие\" должны быть запущены во время работы и не поддерживают воспроизведение истории",
-
   "step1.ontologyGeneration": "Генерация онтологии",
   "step1.completed": "Завершено",
   "step1.pending": "Ожидание",
@@ -230,7 +227,6 @@
   "step1.relationLabel": "Связь",
   "status.error": "Ошибка",
   "status.stepOf": "Шаг {current}/{total}",
-
   "step2.simInstanceInit": "Инициализация экземпляра симуляции",
   "step2.initialized": "Инициализирован",
   "step2.simInstanceDesc": "Создание нового экземпляра симуляции, загрузка шаблонов параметров мира симуляции",
@@ -312,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Воспоминания, сформированные на основе зёрен реальности",
   "step2.socialNetwork": "Сеть социальных связей",
   "step2.socialNetworkDesc": "Индивидуальные связи и граф взаимодействий",
-
   "step3.starting": "Запуск...",
   "step3.generateReport": "Начать генерацию отчёта",
-
   "step5.chatWithReportAgent": "Чат с агентом отчётов",
   "step5.chatWithAnyAgent": "Чат с любым агентом в мире",
   "step5.selectChatTarget": "Выберите цель для чата",
@@ -343,7 +337,6 @@
   "step5.selectAll": "Выбрать все",
   "step5.clearSelection": "Очистить",
   "step5.generatingSection": "Генерация {title}...",
-
   "graph.demo.n1": "Бизнес-кейс",
   "graph.demo.n2": "Аналитик",
   "graph.demo.n3": "Бухгалтер",
@@ -365,9 +358,8 @@
   "graph.demo.type.Output": "Результат",
   "graph.demo.type.Entity": "Сущность",
   "graph.demo.type.Actor": "Актор",
-
   "auth.signIn": "Вход",
-  "auth.enterEmail": "Введите email \u2014 мы отправим вам ссылку для мгновенного входа.",
+  "auth.enterEmail": "Введите email — мы отправим вам ссылку для мгновенного входа.",
   "auth.emailPlaceholder": "вы{'@'}компания.com",
   "auth.sendLink": "Отправить ссылку",
   "auth.sending": "Отправка...",
@@ -383,10 +375,9 @@
   "auth.signedIn": "Вы вошли!",
   "auth.redirecting": "Перенаправляем в AgenikPredict...",
   "auth.logout": "Выйти",
+  "auth.loginTagline": "Возможность увидеть завтра — доступна уже сегодня.",
   "auth.loginSlogan": "Увидьте завтра.\nРешайте сегодня.",
-
   "console.enrichMarketData": "Обогатить данными рынка в реальном времени",
-
   "billing.balance": "Баланс",
   "billing.trialDaysLeft": "Осталось {days} дней пробного периода",
   "billing.trialExpired": "Пробный период истёк",
@@ -398,5 +389,11 @@
   "billing.usageHistory": "История использования",
   "billing.freeTrialBadge": "Бесплатно (пробный)",
   "billing.estimatedReportCost": "Ориентировочно ~$1-2 за отчёт",
-  "billing.addCreditsToGenerate": "Пополните баланс для генерации"
+  "billing.addCreditsToGenerate": "Пополните баланс для генерации",
+  "home.welcome": "С возвращением, {name}",
+  "home.dropFiles": "Перетащите файлы или выберите",
+  "home.formats": "PDF · Фото · Видео · URL · YouTube",
+  "home.takePhoto": "Сделать фото",
+  "home.browseFiles": "Выбрать файлы",
+  "home.promptPlaceholder": "Что вы хотите предсказать?"
 }

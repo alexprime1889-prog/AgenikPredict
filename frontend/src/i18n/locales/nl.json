@@ -64,7 +64,7 @@
   "step1.phase.build": "Grafiekconstructie",
   "step1.phase.complete": "Constructie voltooid",
   "step1.uploading": "Documenten uploaden en analyseren...",
-  "step1.generating": "Ontologiestructuur genereren...",
+  "step1.generating": "Genereren",
   "step1.building": "Kennisgraaf opbouwen...",
   "step1.complete": "Kennisgraafconstructie voltooid",
   "step1.nextStep": "Volgende stap",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "GraphRAG lang-/kortetermijngeheugen wordt in realtime bijgewerkt",
   "graph.liveUpdating": "Wordt in realtime bijgewerkt...",
   "graph.processingHint": "Sommige inhoud wordt nog verwerkt, probeer de grafiek later te vernieuwen",
   "graph.closeHint": "Melding sluiten",
   "graph.waitingOntology": "Wachten op ontologiegeneratie...",
-
   "history.sectionTitle": "Simulatiegeschiedenis",
   "history.moreFiles": "+{count} bestanden",
   "history.noFiles": "Geen bestanden",
@@ -204,10 +202,8 @@
   "history.envSetup": "Omgeving instellen",
   "history.analysisReport": "Analyserapport",
   "history.playbackHint": "Stap 3 \"Simulatie starten\" en Stap 5 \"Diepgaande interactie\" moeten tijdens uitvoering worden gestart en ondersteunen geen geschiedenisweergave",
-
   "step1.ontologyGeneration": "Ontologiegeneratie",
   "step1.completed": "Voltooid",
-  "step1.generating": "Genereren",
   "step1.pending": "In afwachting",
   "step1.ontologyDesc": "LLM analyseert documentinhoud en simulatievereisten, extraheert realiteitszaden en genereert automatisch de juiste ontologiestructuur",
   "step1.analyzingDocs": "Documenten analyseren...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "Relatie",
   "status.error": "Fout",
   "status.stepOf": "Stap {current}/{total}",
-
   "step2.simInstanceInit": "Initialisatie simulatie-instantie",
   "step2.initialized": "Geïnitialiseerd",
   "step2.simInstanceDesc": "Maak een nieuwe simulatie-instantie aan, haal parametersjablonen voor de simulatiewereld op",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Herinneringen gevormd op basis van realiteitszaden",
   "step2.socialNetwork": "Sociaal relatienetwerk",
   "step2.socialNetworkDesc": "Individuele connecties en interactiegraaf",
-
   "step3.starting": "Starten...",
   "step3.generateReport": "Rapport genereren starten",
-
   "step5.chatWithReportAgent": "Chat met Report Agent",
   "step5.chatWithAnyAgent": "Chat met elke agent in de wereld",
   "step5.selectChatTarget": "Selecteer chatdoel",
@@ -344,7 +337,6 @@
   "step5.selectAll": "Alles selecteren",
   "step5.clearSelection": "Wissen",
   "step5.generatingSection": "{title} genereren...",
-
   "graph.demo.n1": "Marktcasus",
   "graph.demo.n2": "Analist",
   "graph.demo.n3": "CPA",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "Uitvoer",
   "graph.demo.type.Entity": "Entiteit",
   "graph.demo.type.Actor": "Actor",
-
   "auth.signIn": "Inloggen",
   "auth.enterEmail": "Voer uw e-mailadres in en wij sturen u een magische link om direct in te loggen.",
   "auth.emailPlaceholder": "u{'@'}bedrijf.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "U bent ingelogd!",
   "auth.redirecting": "Doorverwijzen naar AgenikPredict...",
   "auth.logout": "Uitloggen",
+  "auth.loginTagline": "De kracht om morgen te zien — vandaag beschikbaar.",
   "auth.loginSlogan": "Zie morgen.\nBeslis vandaag.",
-
   "console.enrichMarketData": "Verrijken met live marktgegevens",
-
   "billing.balance": "Saldo",
   "billing.trialDaysLeft": "{days} dagen proefperiode resterend",
   "billing.trialExpired": "Proefperiode verlopen",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "Gebruiksgeschiedenis",
   "billing.freeTrialBadge": "Gratis (Proef)",
   "billing.estimatedReportCost": "Geschat ~$1-2 per rapport",
-  "billing.addCreditsToGenerate": "Voeg tegoed toe om te genereren"
+  "billing.addCreditsToGenerate": "Voeg tegoed toe om te genereren",
+  "home.welcome": "Welkom terug, {name}",
+  "home.dropFiles": "Sleep bestanden of blader",
+  "home.formats": "PDF · Afbeeldingen · Video · URL · YouTube",
+  "home.takePhoto": "Foto maken",
+  "home.browseFiles": "Bestanden bladeren",
+  "home.promptPlaceholder": "Wat wil je voorspellen?"
 }

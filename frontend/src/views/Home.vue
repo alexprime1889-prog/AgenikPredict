@@ -1,268 +1,123 @@
 <template>
-  <div class="home-container">
-    <ParticlesBackground class="particles-bg" :quantity="50" color="#ffffff" :size="0.05" :staticity="40" :ease="70" />
+  <div class="home-page">
+    <!-- 3D Graph Background -->
+    <div ref="graphMount" class="graph-bg"></div>
 
-    <!-- Top navigation bar -->
-    <nav class="navbar">
-      <div class="nav-brand">{{ $t('brand') }}</div>
-      <div class="nav-links">
-        <span v-if="userEmail" class="nav-user">{{ userEmail }}</span>
+    <!-- Navbar -->
+    <nav class="home-nav">
+      <img class="nav-brand-logo" src="../assets/logo/icon_white.png" alt="AgenikPredict" />
+      <div class="nav-actions">
         <LanguageSwitcher />
+        <span v-if="userEmail" class="nav-user">{{ userEmail }}</span>
         <button v-if="isLoggedIn" class="nav-logout" @click="handleLogout">{{ $t('auth.logout') }}</button>
       </div>
     </nav>
 
-    <div class="main-content">
-      <!-- Upper section: Hero area -->
-      <section class="hero-section">
-        <div class="hero-left">
-          <div class="tag-row animate-fade-in" style="--animation-delay: 0ms">
-            <span class="orange-tag animate-shimmer">{{ $t('hero.tagline') }}</span>
+    <!-- Floating Upload Card -->
+    <div class="card-wrap">
+      <div class="upload-card">
+        <BorderBeam :size="200" :duration="12" :delay="3" colorFrom="#ffaa40" colorTo="#9c40ff" />
+
+        <p class="welcome" v-if="currentUser?.name">{{ $t('home.welcome', { name: currentUser.name }) }}</p>
+        <p class="welcome" v-else-if="userEmail">{{ $t('home.welcome', { name: userEmail.split('@')[0] }) }}</p>
+
+        <!-- Upload Zone -->
+        <div
+          class="drop-zone"
+          :class="{ 'drag-over': isDragOver, 'has-files': files.length > 0 }"
+          @dragover.prevent="handleDragOver"
+          @dragleave.prevent="handleDragLeave"
+          @drop.prevent="handleDrop"
+          @click="triggerFileInput"
+        >
+          <input ref="fileInput" type="file" multiple accept=".pdf,.md,.txt,.jpg,.jpeg,.png,.webp,.gif,.bmp,.mp4,.mov,.avi,.webm,.mkv" style="display:none" :disabled="loading" @change="handleFileSelect" />
+          <input ref="cameraInput" type="file" accept="image/*" capture="environment" style="display:none" :disabled="loading" @change="handleFileSelect" />
+
+          <div v-if="files.length === 0" class="drop-placeholder">
+            <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span class="drop-text">{{ $t('home.dropFiles') }}</span>
           </div>
 
-          <h1 class="main-title animate-fade-in" style="--animation-delay: 200ms">
-            {{ $t('hero.title.line1') }}<br>
-            <span class="gradient-text">{{ $t('hero.title.line2') }}</span>
-          </h1>
-
-          <div class="hero-desc animate-fade-in" style="--animation-delay: 400ms">
-            <p v-html="$t('hero.desc', { brand: 'AgenikPredict', agentCount: $t('hero.agentCount'), optimalSolution: $t('hero.optimalSolution') })"></p>
-            <p class="slogan-text">
-              {{ $t('hero.slogan') }}<span class="blinking-cursor">_</span>
-            </p>
+          <div v-else class="file-list">
+            <div v-for="(file, index) in files" :key="`${file.name}-${index}`" class="file-chip">
+              <span class="file-badge">{{ getFileTypeBadge(file.name) }}</span>
+              <span class="file-name">{{ file.name }}</span>
+              <button class="file-remove" @click.stop="removeFile(index)">×</button>
+            </div>
           </div>
-
-          <div class="decoration-square animate-fade-in" style="--animation-delay: 600ms"></div>
         </div>
 
-        <div class="hero-right">
-          <HeroGraphPreview />
+        <p class="formats">{{ $t('home.formats') }}</p>
 
-          <button class="scroll-down-btn" @click="scrollToBottom">
-            ↓
+        <!-- Action buttons -->
+        <div class="action-row">
+          <button class="action-btn" @click="triggerCamera" :disabled="loading">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            {{ $t('home.takePhoto') }}
+          </button>
+          <button class="action-btn" @click="triggerFileInput" :disabled="loading">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            {{ $t('home.browseFiles') }}
           </button>
         </div>
-      </section>
 
-      <!-- Lower section: Two-column layout -->
-      <section class="dashboard-section">
-        <!-- Left column: Status and steps -->
-        <div class="left-panel">
-          <div class="panel-header">
-            <span class="status-dot">■</span> {{ $t('status.systemStatus') }}
-          </div>
-
-          <h2 class="section-title">{{ $t('status.ready') }}</h2>
-          <p class="section-desc">
-            {{ $t('status.readyDesc') }}
-          </p>
-
-          <!-- Metrics cards -->
-          <div class="metrics-row">
-            <div class="metric-card">
-              <div class="metric-value">{{ $t('metrics.lowCost') }}</div>
-              <div class="metric-label">{{ $t('metrics.lowCostDesc') }}</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value">{{ $t('metrics.highAvail') }}</div>
-              <div class="metric-label">{{ $t('metrics.highAvailDesc') }}</div>
-            </div>
-          </div>
-
-          <!-- Workflow steps -->
-          <div class="steps-container">
-            <div class="steps-header">
-               <span class="diamond-icon">◇</span> {{ $t('workflow.title') }}
-            </div>
-            <div class="workflow-list">
-              <div class="workflow-item">
-                <span class="step-num">01</span>
-                <div class="step-info">
-                  <div class="step-title">{{ $t('steps.graphBuild') }}</div>
-                  <div class="step-desc">{{ $t('steps.graphBuildDesc') }}</div>
-                </div>
-              </div>
-              <div class="workflow-item">
-                <span class="step-num">02</span>
-                <div class="step-info">
-                  <div class="step-title">{{ $t('steps.envSetup') }}</div>
-                  <div class="step-desc">{{ $t('steps.envSetupDesc') }}</div>
-                </div>
-              </div>
-              <div class="workflow-item">
-                <span class="step-num">03</span>
-                <div class="step-info">
-                  <div class="step-title">{{ $t('steps.simulation') }}</div>
-                  <div class="step-desc">{{ $t('steps.simulationDesc') }}</div>
-                </div>
-              </div>
-              <div class="workflow-item">
-                <span class="step-num">04</span>
-                <div class="step-info">
-                  <div class="step-title">{{ $t('steps.report') }}</div>
-                  <div class="step-desc">{{ $t('steps.reportDesc') }}</div>
-                </div>
-              </div>
-              <div class="workflow-item">
-                <span class="step-num">05</span>
-                <div class="step-info">
-                  <div class="step-title">{{ $t('steps.interaction') }}</div>
-                  <div class="step-desc">{{ $t('steps.interactionDesc') }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- URL Input -->
+        <div class="url-row">
+          <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <input v-model="urlInput" type="url" class="url-input" placeholder="Paste URL or YouTube link" :disabled="loading" @keydown.enter.prevent="addUrl" />
+          <button class="url-add" @click="addUrl" :disabled="!urlInput.trim() || loading">+</button>
         </div>
 
-        <!-- Right column: Interactive console -->
-        <div class="right-panel">
-          <div class="console-box">
-            <BorderBeam :size="200" :duration="12" :delay="11" />
-
-            <!-- Upload area -->
-            <div class="console-section">
-              <div class="console-header">
-                <span class="console-label">{{ $t('console.realitySeed') }}</span>
-                <span class="console-meta">{{ $t('console.supportedFormatsLong') }}</span>
-              </div>
-
-              <div
-                class="upload-zone"
-                :class="{ 'drag-over': isDragOver, 'has-files': files.length > 0 }"
-                @dragover.prevent="handleDragOver"
-                @dragleave.prevent="handleDragLeave"
-                @drop.prevent="handleDrop"
-                @click="triggerFileInput"
-              >
-                <input
-                  ref="fileInput"
-                  type="file"
-                  multiple
-                  accept=".pdf,.md,.txt,.jpg,.jpeg,.png,.webp,.gif,.bmp,.mp4,.mov,.avi,.webm,.mkv"
-                  @change="handleFileSelect"
-                  style="display: none"
-                  :disabled="loading"
-                />
-
-                <div v-if="files.length === 0" class="upload-placeholder">
-                  <div class="upload-icon">↑</div>
-                  <div class="upload-title">{{ $t('upload.dragFiles') }}</div>
-                  <div class="upload-hint">{{ $t('upload.browseFiles') }}</div>
-                  <div class="upload-accepts">{{ $t('upload.acceptsLabel') }}</div>
-                </div>
-
-                <div v-else class="file-list">
-                  <div v-for="(file, index) in files" :key="index" class="file-item">
-                    <span class="file-icon">{{ getFileIcon(file.name) }}</span>
-                    <span class="file-name">{{ file.name }}</span>
-                    <span class="file-type-badge">{{ getFileTypeBadge(file.name) }}</span>
-                    <button @click.stop="removeFile(index)" class="remove-btn">×</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="url-input-row">
-                <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                <input
-                  v-model="urlInput"
-                  type="url"
-                  class="url-field"
-                  :placeholder="$t('upload.urlPlaceholder')"
-                  :disabled="loading"
-                  @keydown.enter.prevent="addUrl"
-                />
-                <button class="url-add-btn" @click="addUrl" :disabled="!urlInput.trim() || loading">+</button>
-              </div>
-
-              <div v-if="urls.length > 0" class="url-list">
-                <div v-for="(url, index) in urls" :key="url" class="file-item">
-                  <span class="file-icon">{{ isYouTubeUrl(url) ? '▶' : '🔗' }}</span>
-                  <span class="file-name">{{ url }}</span>
-                  <span class="file-type-badge">{{ isYouTubeUrl(url) ? 'YT' : 'URL' }}</span>
-                  <button @click.stop="removeUrl(index)" class="remove-btn">×</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Divider -->
-            <div class="console-divider">
-              <span>{{ $t('console.inputParams') }}</span>
-            </div>
-
-            <!-- Input area -->
-            <div class="console-section">
-              <div class="console-header">
-                <span class="console-label">{{ $t('console.simulationPrompt') }}</span>
-              </div>
-              <div class="template-chips">
-                <button
-                  v-for="tmpl in promptTemplates"
-                  :key="tmpl.label"
-                  class="template-chip"
-                  :class="{ active: formData.simulationRequirement === tmpl.prompt }"
-                  @click="applyTemplate(tmpl)"
-                  :disabled="loading"
-                >
-                  <svg v-if="tmpl.label === 'Investment'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                  <svg v-else-if="tmpl.label === 'Marketing'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-                  <svg v-else-if="tmpl.label === 'Hiring'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-                  <svg v-else-if="tmpl.label === 'Political'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-                  <svg v-else-if="tmpl.label === 'Risk'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-                  <svg v-else-if="tmpl.label === 'Product'" class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                  <span class="chip-label">{{ tmpl.label }}</span>
-                </button>
-              </div>
-              <div class="input-wrapper">
-                <textarea
-                  v-model="formData.simulationRequirement"
-                  class="code-input"
-                  :placeholder="$t('console.placeholder')"
-                  rows="6"
-                  :disabled="loading"
-                ></textarea>
-                <div class="model-badge">{{ $t('console.engineBadge') }}</div>
-              </div>
-            </div>
-
-            <!-- Start button -->
-            <div class="console-section btn-section">
-              <label class="market-data-toggle">
-                <input type="checkbox" v-model="enrichWithMarketData" :disabled="loading" />
-                <span class="toggle-text">{{ $t('console.enrichMarketData') }}</span>
-              </label>
-              <button
-                class="start-engine-btn"
-                @click="startSimulation"
-                :disabled="!canSubmit || loading"
-              >
-                <span v-if="!loading">{{ $t('console.startEngine') }}</span>
-                <span v-else>{{ $t('console.initializing') }}</span>
-                <span class="btn-arrow">→</span>
-              </button>
-            </div>
+        <div v-if="urls.length > 0" class="url-chips">
+          <div v-for="(url, index) in urls" :key="url" class="file-chip">
+            <span class="file-badge">{{ isYouTubeUrl(url) ? 'YT' : 'URL' }}</span>
+            <span class="file-name">{{ url }}</span>
+            <button class="file-remove" @click.stop="removeUrl(index)">×</button>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
 
-      <!-- History database -->
+    <!-- Bottom Prompt Bar -->
+    <div class="prompt-bar">
+      <div class="prompt-inner">
+        <div class="chips-row">
+          <button v-for="tmpl in promptTemplates" :key="tmpl.label" class="chip" :class="{ active: formData.simulationRequirement === tmpl.prompt }" @click="applyTemplate(tmpl)" :disabled="loading">
+            {{ tmpl.label }}
+          </button>
+        </div>
+        <div class="prompt-input-row">
+          <textarea v-model="formData.simulationRequirement" class="prompt-textarea" :placeholder="$t('home.promptPlaceholder')" rows="1" :disabled="loading" @input="autoResize" ref="promptRef"></textarea>
+          <button class="start-btn" :disabled="!canSubmit || loading" @click="startSimulation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="start-icon"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History (compact) -->
+    <div class="history-section" v-if="isLoggedIn">
       <HistoryDatabase />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
-import ParticlesBackground from '../components/magicui/ParticlesBackground.vue'
 import BorderBeam from '../components/magicui/BorderBeam.vue'
-import HeroGraphPreview from '../components/HeroGraphPreview.vue'
+import ForceGraph3D from '3d-force-graph'
+import SpriteText from 'three-spritetext'
+import * as THREE from 'three'
 import { isAuthenticated, currentUser, logout } from '../store/auth'
 
+const { locale } = useI18n()
 const router = useRouter()
+const promptRef = ref(null)
 
-// Auth
 const isLoggedIn = isAuthenticated
 const userEmail = computed(() => currentUser.value?.email || '')
 function handleLogout() {
@@ -270,26 +125,16 @@ function handleLogout() {
   router.push('/login')
 }
 
-// Form data
-const formData = ref({
-  simulationRequirement: ''
-})
-
-// File list
+const formData = ref({ simulationRequirement: '' })
 const files = ref([])
-
-// URL list
 const urls = ref([])
 const urlInput = ref('')
-
-// State
 const loading = ref(false)
-const error = ref('')
 const isDragOver = ref(false)
-const enrichWithMarketData = ref(false)
-
-// File input ref
 const fileInput = ref(null)
+const cameraInput = ref(null)
+const graphMount = ref(null)
+let graphInstance = null
 
 const canSubmit = computed(() => {
   const hasPrompt = formData.value.simulationRequirement.trim() !== ''
@@ -302,90 +147,41 @@ const addUrl = () => {
   if (!raw) return
   try {
     const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`)
-    if (!urls.value.includes(u.href)) {
-      urls.value.push(u.href)
-    }
+    if (!urls.value.includes(u.href)) urls.value.push(u.href)
     urlInput.value = ''
-  } catch {
-    // invalid URL, ignore
-  }
+  } catch {}
 }
 
-const removeUrl = (index) => {
-  urls.value.splice(index, 1)
-}
+const removeUrl = (index) => { urls.value.splice(index, 1) }
 
-const isYouTubeUrl = (url) => {
-  return /youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts|youtube\.com\/live/.test(url)
-}
+const isYouTubeUrl = (url) => /youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts|youtube\.com\/live/.test(url)
 
-// Trigger file selection dialog
-const triggerFileInput = () => {
-  if (!loading.value) {
-    fileInput.value?.click()
-  }
-}
+const triggerFileInput = () => { if (!loading.value) fileInput.value?.click() }
+const triggerCamera = () => { if (!loading.value) cameraInput.value?.click() }
 
-// Handle file selection
-const handleFileSelect = (event) => {
-  const selectedFiles = Array.from(event.target.files)
-  addFiles(selectedFiles)
-}
-
-// Handle drag events
-const handleDragOver = (e) => {
-  if (!loading.value) {
-    isDragOver.value = true
-  }
-}
-
-const handleDragLeave = (e) => {
-  isDragOver.value = false
-}
-
+const handleFileSelect = (event) => { addFiles(Array.from(event.target.files || [])) }
+const handleDragOver = () => { if (!loading.value) isDragOver.value = true }
+const handleDragLeave = () => { isDragOver.value = false }
 const handleDrop = (e) => {
   isDragOver.value = false
   if (loading.value) return
-
-  const droppedFiles = Array.from(e.dataTransfer.files)
-  addFiles(droppedFiles)
+  addFiles(Array.from(e.dataTransfer?.files || []))
 }
 
-// Add validated files to the list
-const ALLOWED_EXTENSIONS = [
-  'pdf', 'md', 'txt',
-  'jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp',
-  'mp4', 'mov', 'avi', 'webm', 'mkv'
-]
-
+const ALLOWED_EXTENSIONS = ['pdf','md','txt','jpg','jpeg','png','webp','gif','bmp','mp4','mov','avi','webm','mkv']
 const addFiles = (newFiles) => {
-  const validFiles = newFiles.filter(file => {
-    const ext = file.name.split('.').pop().toLowerCase()
-    return ALLOWED_EXTENSIONS.includes(ext)
-  })
-  files.value.push(...validFiles)
-}
-
-const getFileIcon = (name) => {
-  const ext = name.split('.').pop().toLowerCase()
-  if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) return '🖼️'
-  if (['mp4', 'mov', 'avi', 'webm', 'mkv'].includes(ext)) return '🎬'
-  if (ext === 'pdf') return '📕'
-  return '📄'
+  files.value.push(...newFiles.filter(f => ALLOWED_EXTENSIONS.includes(f.name.split('.').pop().toLowerCase())))
 }
 
 const getFileTypeBadge = (name) => {
   const ext = name.split('.').pop().toLowerCase()
-  if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) return 'IMG'
-  if (['mp4', 'mov', 'avi', 'webm', 'mkv'].includes(ext)) return 'VID'
+  if (['jpg','jpeg','png','webp','gif','bmp'].includes(ext)) return 'IMG'
+  if (['mp4','mov','avi','webm','mkv'].includes(ext)) return 'VID'
   if (ext === 'pdf') return 'PDF'
-  if (ext === 'md') return 'MD'
   return 'TXT'
 }
 
-const removeFile = (index) => {
-  files.value.splice(index, 1)
-}
+const removeFile = (index) => { files.value.splice(index, 1) }
 
 const promptTemplates = [
   { label: 'Investment', prompt: 'Analyze the uploaded company report and simulate how the stock market, institutional investors, and retail traders would react to the disclosed financial results over the next quarter.' },
@@ -396,106 +192,151 @@ const promptTemplates = [
   { label: 'Product', prompt: 'Simulate market response to the pricing change / feature announcement described in the uploaded document. How would competitors, customers, and analysts react?' },
 ]
 
-const applyTemplate = (template) => {
-  formData.value.simulationRequirement = template.prompt
+const applyTemplate = (t) => { formData.value.simulationRequirement = t.prompt }
+
+const autoResize = () => {
+  if (promptRef.value) {
+    promptRef.value.style.height = 'auto'
+    promptRef.value.style.height = Math.min(promptRef.value.scrollHeight, 120) + 'px'
+  }
 }
 
-// Scroll to bottom of page
-const scrollToBottom = () => {
-  window.scrollTo({
-    top: document.body.scrollHeight,
-    behavior: 'smooth'
-  })
-}
-
-// Start simulation - navigate immediately, API calls happen on the Process page
 const startSimulation = () => {
   if (!canSubmit.value || loading.value) return
-
   import('../store/pendingUpload.js').then(({ setPendingUpload }) => {
-    setPendingUpload(files.value, formData.value.simulationRequirement, urls.value, enrichWithMarketData.value)
-
-    router.push({
-      name: 'Process',
-      params: { projectId: 'new' }
-    })
+    setPendingUpload(files.value, formData.value.simulationRequirement, urls.value)
+    router.push({ name: 'Process', params: { projectId: 'new' } })
   })
 }
+
+const COLORS = {
+  Person: '#FF6B35', Investor: '#004E89', Company: '#7B2D8E',
+  Founder: '#1A936F', FinancialInstitution: '#C5283D',
+  GovernmentAgency: '#E9724C', Entity: '#3498db'
+}
+
+onMounted(async () => {
+  if (!graphMount.value) return
+  let graphData, translations = {}
+  try {
+    let gRes = await fetch('/production-graph.json')
+    if (!gRes.ok) gRes = await fetch('/demo-graph.json')
+    graphData = await gRes.json()
+    try {
+      const tRes = await fetch('/graph-translations.json')
+      if (tRes.ok) { const allT = await tRes.json(); translations = allT[locale.value] || allT.en || {} }
+    } catch {}
+  } catch (e) { console.error('Graph data load failed:', e); return }
+
+  const data = graphData.data || graphData
+  const nodes = [], links = [], nodeMap = new Map()
+  for (const n of (data.nodes || [])) {
+    const type = n.labels?.find(l => l !== 'Entity') || 'Entity'
+    const orig = n.name || 'Unnamed'
+    const node = { id: n.uuid, name: translations[orig] || orig, type, val: 1 }
+    nodeMap.set(n.uuid, node)
+    nodes.push(node)
+  }
+  const nodeIds = new Set(nodes.map(n => n.id))
+  for (const e of (data.edges || [])) {
+    if (nodeIds.has(e.source_node_uuid) && nodeIds.has(e.target_node_uuid)) {
+      links.push({ source: e.source_node_uuid, target: e.target_node_uuid })
+      const s = nodeMap.get(e.source_node_uuid); if (s) s.val += 0.5
+      const t = nodeMap.get(e.target_node_uuid); if (t) t.val += 0.5
+    }
+  }
+
+  const el = graphMount.value
+  graphInstance = ForceGraph3D()(el)
+    .width(el.clientWidth).height(el.clientHeight)
+    .graphData({ nodes, links })
+    .backgroundColor('rgba(0,0,0,0)')
+    .showNavInfo(false)
+    .nodeThreeObject(node => {
+      const color = COLORS[node.type] || '#999'
+      const r = Math.max(2.5, Math.sqrt(node.val) * 2)
+      const g = new THREE.Group()
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(r, 16, 16), new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.85 })))
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(r * 1.4, 12, 12), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.1 })))
+      const lbl = new SpriteText(node.name.length > 12 ? node.name.slice(0, 10) + '…' : node.name)
+      lbl.color = '#ccc'; lbl.textHeight = 2.5; lbl.position.set(0, -(r + 4), 0); lbl.backgroundColor = false
+      g.add(lbl)
+      return g
+    })
+    .nodeLabel(() => '')
+    .linkColor(() => 'rgba(255,255,255,0.15)')
+    .linkWidth(0.5).linkOpacity(0.5)
+    .enableNodeDrag(false)
+    .d3AlphaDecay(0.03).d3VelocityDecay(0.25)
+    .warmupTicks(100).cooldownTicks(0)
+
+  graphInstance.controls().autoRotate = true
+  graphInstance.controls().autoRotateSpeed = 0.8
+  graphInstance.controls().enableZoom = true
+  graphInstance.controls().enablePan = false
+
+  setTimeout(() => { if (graphInstance) graphInstance.cameraPosition({ x: 0, y: 0, z: 300 }) }, 500)
+
+  const onResize = () => { if (graphInstance && el) graphInstance.width(el.clientWidth).height(el.clientHeight) }
+  window.addEventListener('resize', onResize)
+})
+
+onUnmounted(() => {
+  if (graphInstance) { graphInstance._destructor?.(); graphInstance = null }
+})
 </script>
 
 <style scoped>
-/* Global variables and reset */
-:root {
-  --black: #000000;
-  --white: #FAFAFA;
-  --orange: #FF4500;
-  --gray-light: #111111;
-  --gray-text: #999999;
-  --border: rgba(255, 255, 255, 0.1);
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-sans: 'Space Grotesk', 'Noto Sans Hebrew', system-ui, sans-serif;
-  --font-cn: 'Noto Sans Hebrew', system-ui, sans-serif;
-}
-
-.home-container {
+.home-page {
   min-height: 100vh;
-  background: #000000;
-  font-family: var(--font-sans);
-  color: #E0E0E0;
+  background: #0a0a0a;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  color: #e0e0e0;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Particles background */
-.particles-bg {
+.graph-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
 }
 
-/* Top navigation */
-.navbar {
-  height: 60px;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
-  color: var(--white);
+.home-nav {
+  position: relative;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  padding: 16px 24px;
 }
 
-.nav-brand {
-  font-family: var(--font-mono);
-  font-weight: 800;
-  letter-spacing: 1px;
-  font-size: 1.2rem;
-  color: #FFFFFF;
+.nav-brand-logo {
+  height: 22px;
+  width: auto;
+  opacity: 0.9;
 }
 
-.nav-links {
+.nav-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .nav-user {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 12px;
   color: #888;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .nav-logout {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 12px;
   color: #666;
   background: none;
   border: 1px solid #333;
-  border-radius: 6px;
   padding: 4px 12px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -505,780 +346,306 @@ const startSimulation = () => {
   border-color: #555;
 }
 
-.github-link {
-  color: var(--white);
-  text-decoration: none;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 500;
+.card-wrap {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: opacity 0.2s;
-}
-
-.github-link:hover {
-  opacity: 0.8;
-}
-
-.arrow {
-  font-family: sans-serif;
-}
-
-/* Main content area */
-.main-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 60px 40px;
-}
-
-/* Hero section */
-.hero-section {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 80px;
-  position: relative;
-}
-
-.hero-left {
-  flex: 1;
-  padding-right: 60px;
-}
-
-.tag-row {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 25px;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-}
-
-.orange-tag {
-  background: var(--orange);
-  color: #FFFFFF;
-  padding: 4px 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  font-size: 0.75rem;
-}
-
-.version-text {
-  color: #666666;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-.main-title {
-  font-size: 4.5rem;
-  line-height: 1.2;
-  font-weight: 500;
-  margin: 0 0 40px 0;
-  letter-spacing: -2px;
-  color: #FFFFFF;
-}
-
-.gradient-text {
-  background: linear-gradient(90deg, #FFFFFF 0%, #999999 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-}
-
-.hero-desc {
-  font-size: 1.05rem;
-  line-height: 1.8;
-  color: var(--gray-text);
-  max-width: 640px;
-  margin-bottom: 50px;
-  font-weight: 400;
-  text-align: justify;
-}
-
-.hero-desc p {
-  margin-bottom: 1.5rem;
-}
-
-.highlight-bold {
-  color: #FFFFFF;
-  font-weight: 700;
-}
-
-.highlight-orange {
-  color: var(--orange);
-  font-weight: 700;
-  font-family: var(--font-mono);
-}
-
-.highlight-code {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 6px;
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  color: #FFFFFF;
-  font-weight: 600;
-}
-
-.slogan-text {
-  font-size: 1.2rem;
-  font-weight: 520;
-  color: #E0E0E0;
-  letter-spacing: 1px;
-  border-left: 3px solid var(--orange);
-  padding-left: 15px;
-  margin-top: 20px;
-}
-
-.blinking-cursor {
-  color: var(--orange);
-  animation: blink 1s step-end infinite;
-  font-weight: 700;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.decoration-square {
-  width: 16px;
-  height: 16px;
-  background: var(--orange);
-}
-
-.hero-right {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
-}
-
-.logo-container {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  padding-right: 40px;
-}
-
-.hero-logo {
-  max-width: 500px;
-  width: 100%;
-}
-
-.scroll-down-btn {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--border);
-  background: transparent;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  cursor: pointer;
-  color: var(--orange);
-  font-size: 1.2rem;
-  transition: all 0.2s;
-}
-
-.scroll-down-btn:hover {
-  border-color: var(--orange);
-}
-
-/* Dashboard two-column layout */
-.dashboard-section {
-  display: flex;
-  gap: 60px;
-  border-top: 1px solid var(--border);
-  padding-top: 60px;
-  align-items: flex-start;
-}
-
-.dashboard-section .left-panel,
-.dashboard-section .right-panel {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Left panel */
-.left-panel {
-  flex: 0.8;
-}
-
-.panel-header {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: #666666;
-  display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.status-dot {
-  color: var(--orange);
-  font-size: 0.8rem;
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: 520;
-  margin: 0 0 15px 0;
-  color: #FFFFFF;
-}
-
-.section-desc {
-  color: var(--gray-text);
-  margin-bottom: 25px;
-  line-height: 1.6;
-}
-
-.metrics-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-}
-
-.metric-card {
-  border: 1px solid var(--border);
-  padding: 20px 30px;
-  min-width: 150px;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.metric-value {
-  font-family: var(--font-mono);
-  font-size: 1.8rem;
-  font-weight: 520;
-  margin-bottom: 5px;
-  color: #FFFFFF;
-}
-
-.metric-label {
-  font-size: 0.85rem;
-  color: #666666;
-}
-
-/* Workflow steps */
-.steps-container {
-  border: 1px solid var(--border);
-  padding: 30px;
-  position: relative;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.steps-header {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: #666666;
-  margin-bottom: 25px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.diamond-icon {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.workflow-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.workflow-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.step-num {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: #FFFFFF;
-  opacity: 0.3;
-}
-
-.step-info {
-  flex: 1;
-}
-
-.step-title {
-  font-weight: 520;
-  font-size: 1rem;
-  margin-bottom: 4px;
-  color: #E0E0E0;
-}
-
-.step-desc {
-  font-size: 0.85rem;
-  color: var(--gray-text);
-}
-
-/* Right interactive console */
-.right-panel {
-  flex: 1.2;
-}
-
-.console-box {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  position: relative;
-}
-
-.console-section {
+  min-height: calc(100vh - 200px);
   padding: 20px;
 }
 
-.console-section.btn-section {
-  padding-top: 0;
-}
-
-.console-header {
+.upload-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 32px 28px;
+  background: rgba(17, 17, 17, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: #666666;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.upload-zone {
+.welcome {
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+}
+
+.drop-zone {
   border: 1px dashed rgba(255, 255, 255, 0.15);
-  height: 200px;
-  overflow-y: auto;
+  border-radius: 12px;
+  min-height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   background: rgba(255, 255, 255, 0.02);
 }
 
-.upload-zone.has-files {
-  align-items: flex-start;
-}
-
-.upload-zone:hover {
-  background: rgba(255, 255, 255, 0.05);
+.drop-zone:hover, .drop-zone.drag-over {
   border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.upload-placeholder {
+.drop-zone.has-files {
+  align-items: flex-start;
+  padding: 12px;
+}
+
+.drop-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+}
+
+.drop-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.5;
+}
+
+.drop-text {
+  font-size: 13px;
+}
+
+.formats {
+  font-size: 11px;
+  color: #555;
   text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  margin: -8px 0 0;
 }
 
-.upload-icon {
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 15px;
-  color: #666666;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #ccc;
+  font-size: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.upload-title {
-  font-weight: 500;
-  font-size: 0.9rem;
-  margin-bottom: 5px;
-  color: #E0E0E0;
+.action-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
 }
 
-.upload-hint {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: #666666;
+.btn-icon {
+  width: 16px;
+  height: 16px;
 }
 
-.upload-accepts {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: #888888;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  letter-spacing: 0.02em;
-}
-
-.url-input-row {
+.url-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 4px 4px 4px 12px;
   background: rgba(255, 255, 255, 0.02);
 }
 
 .url-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  color: #666;
   flex-shrink: 0;
-  margin-left: 8px;
-  color: #888;
 }
 
-.url-field {
+.url-input {
   flex: 1;
   border: none;
   background: transparent;
-  color: #E0E0E0;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
+  color: #e0e0e0;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
   outline: none;
-  padding: 8px 4px;
+  padding: 8px 0;
 }
 
-.url-field::placeholder {
-  color: #555;
-}
+.url-input::placeholder { color: #444; }
 
-.url-add-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: #CCC;
-  font-size: 1.1rem;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.url-add-btn:hover:not(:disabled) {
-  border-color: var(--orange);
-  color: var(--orange);
-}
-
-.url-add-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.url-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.file-type-badge {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #AAA;
-  letter-spacing: 0.5px;
-}
-
-.template-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.template-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
-  color: #CCC;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.template-chip:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.06);
-  color: #FFF;
-}
-
-.template-chip.active {
-  border-color: var(--orange);
-  color: var(--orange);
-  background: rgba(255, 69, 0, 0.08);
-}
-
-.template-chip:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.chip-icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.chip-label {
-  font-weight: 500;
-}
-
-.file-list {
-  width: 100%;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 8px 12px;
+.url-add {
+  width: 28px;
+  height: 28px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: #E0E0E0;
+  border-radius: 6px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.url-add:hover:not(:disabled) { border-color: #ff4500; color: #ff4500; }
+.url-add:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.url-chips, .file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.file-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #aaa;
+  letter-spacing: 0.5px;
 }
 
 .file-name {
   flex: 1;
-  margin: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ccc;
 }
 
-.remove-btn {
+.file-remove {
   background: none;
   border: none;
+  color: #666;
   cursor: pointer;
-  font-size: 1.2rem;
-  color: #666666;
+  font-size: 14px;
 }
 
-.remove-btn:hover {
-  color: var(--orange);
+/* Bottom Prompt Bar */
+.prompt-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 20px 16px;
 }
 
-.console-divider {
+.prompt-inner {
+  max-width: 680px;
+  margin: 0 auto;
   display: flex;
-  align-items: center;
-  margin: 10px 0;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.console-divider::before,
-.console-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+.chips-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
-.console-divider span {
-  padding: 0 15px;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: #555555;
-  letter-spacing: 1px;
-}
-
-.input-wrapper {
-  position: relative;
+.chip {
+  white-space: nowrap;
+  padding: 5px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
+  border-radius: 100px;
+  background: transparent;
+  color: #888;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.code-input {
-  width: 100%;
+.chip:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.25); color: #fff; }
+.chip.active { border-color: #ff4500; color: #ff4500; }
+
+.prompt-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 4px 4px 4px 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.prompt-textarea {
+  flex: 1;
   border: none;
   background: transparent;
-  padding: 20px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1.6;
-  resize: vertical;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-family: 'Space Grotesk', sans-serif;
   outline: none;
-  min-height: 150px;
-  color: #E0E0E0;
+  resize: none;
+  padding: 10px 0;
+  max-height: 120px;
+  line-height: 1.5;
 }
 
-.code-input::placeholder {
-  color: #555555;
-}
+.prompt-textarea::placeholder { color: #555; }
 
-.model-badge {
-  position: absolute;
-  bottom: 10px;
-  right: 15px;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: #555555;
-}
-
-.start-engine-btn {
-  width: 100%;
-  background: #FFFFFF;
-  color: #000000;
+.start-btn {
+  width: 40px;
+  height: 40px;
   border: none;
-  padding: 20px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 1.1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  border-radius: 10px;
+  background: #ff4500;
+  color: #fff;
   cursor: pointer;
-  transition: all 0.3s ease;
-  letter-spacing: 1px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Enabled state (not disabled) */
-.start-engine-btn:not(:disabled) {
-  background: #FFFFFF;
-  border: 1px solid #FFFFFF;
-  animation: pulse-border 2s infinite;
-}
-
-.start-engine-btn:hover:not(:disabled) {
-  background: var(--orange);
-  border-color: var(--orange);
-  color: #FFFFFF;
-  transform: translateY(-2px);
-}
-
-.start-engine-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.start-engine-btn:disabled {
-  background: rgba(255, 255, 255, 0.08);
-  color: #555555;
-  cursor: not-allowed;
-  transform: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Subtle border pulse animation */
-@keyframes pulse-border {
-  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); }
-  70% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-}
-
-/* Fade-in animation with staggered delays */
-.animate-fade-in {
-  opacity: 0;
-  animation: fadeIn 0.8s ease forwards;
-  animation-delay: var(--animation-delay, 0ms);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Shimmer animation for orange tag */
-.animate-shimmer {
-  background-size: 200% 100%;
-  background-image: linear-gradient(
-    90deg,
-    var(--orange) 0%,
-    #FF6B35 25%,
-    var(--orange) 50%,
-    #FF6B35 75%,
-    var(--orange) 100%
-  );
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Market data toggle */
-.market-data-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: #999;
-  transition: color 0.2s;
-}
-
-.market-data-toggle:hover {
-  color: #CCC;
-}
-
-.market-data-toggle input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-  position: relative;
+  justify-content: center;
   flex-shrink: 0;
   transition: all 0.2s;
 }
 
-.market-data-toggle input[type="checkbox"]:checked {
-  border-color: var(--orange);
-  background: rgba(255, 69, 0, 0.15);
+.start-btn:hover:not(:disabled) { filter: brightness(1.15); transform: scale(1.05); }
+.start-btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+
+.start-icon {
+  width: 20px;
+  height: 20px;
 }
 
-.market-data-toggle input[type="checkbox"]:checked::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 5px;
-  width: 4px;
-  height: 8px;
-  border: solid var(--orange);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+.history-section {
+  position: relative;
+  z-index: 5;
+  padding-bottom: 100px;
 }
 
-.market-data-toggle input[type="checkbox"]:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.toggle-text {
-  user-select: none;
-}
-
-/* Responsive layout */
-@media (max-width: 1024px) {
-  .dashboard-section {
-    flex-direction: column;
-  }
-
-  .hero-section {
-    flex-direction: column;
-  }
-
-  .hero-left {
-    padding-right: 0;
-    margin-bottom: 40px;
-  }
-
-  .hero-logo {
-    max-width: 200px;
-    margin-bottom: 20px;
-  }
+@media (max-width: 640px) {
+  .upload-card { max-width: 100%; padding: 24px 20px; }
+  .card-wrap { min-height: calc(100vh - 160px); }
+  .prompt-bar { padding: 10px 12px 14px; }
 }
 </style>

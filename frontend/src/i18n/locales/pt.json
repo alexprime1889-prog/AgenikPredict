@@ -64,7 +64,7 @@
   "step1.phase.build": "Construção do Grafo",
   "step1.phase.complete": "Construção Concluída",
   "step1.uploading": "A carregar e analisar documentos...",
-  "step1.generating": "A gerar estrutura de ontologia...",
+  "step1.generating": "A gerar",
   "step1.building": "A construir grafo de conhecimento...",
   "step1.complete": "Construção do grafo de conhecimento concluída",
   "step1.nextStep": "Próximo Passo",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "Memória de longo/curto prazo do GraphRAG a atualizar em tempo real",
   "graph.liveUpdating": "A atualizar em tempo real...",
   "graph.processingHint": "Algum conteúdo ainda está a ser processado, tente atualizar o grafo mais tarde",
   "graph.closeHint": "Fechar aviso",
   "graph.waitingOntology": "A aguardar geração de ontologia...",
-
   "history.sectionTitle": "Histórico de Simulações",
   "history.moreFiles": "+{count} ficheiros",
   "history.noFiles": "Sem ficheiros",
@@ -204,10 +202,8 @@
   "history.envSetup": "Config. do Ambiente",
   "history.analysisReport": "Relatório de Análise",
   "history.playbackHint": "O Passo 3 \"Iniciar Simulação\" e o Passo 5 \"Interação Profunda\" devem ser iniciados durante a execução e não suportam reprodução do histórico",
-
   "step1.ontologyGeneration": "Geração de Ontologia",
   "step1.completed": "Concluído",
-  "step1.generating": "A gerar",
   "step1.pending": "Pendente",
   "step1.ontologyDesc": "O LLM analisa o conteúdo do documento e os requisitos de simulação, extrai sementes de realidade e gera automaticamente a estrutura de ontologia apropriada",
   "step1.analyzingDocs": "A analisar documentos...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "Relação",
   "status.error": "Erro",
   "status.stepOf": "Passo {current}/{total}",
-
   "step2.simInstanceInit": "Inicialização da Instância de Simulação",
   "step2.initialized": "Inicializado",
   "step2.simInstanceDesc": "Criar uma nova instância de simulação, obter modelos de parâmetros do mundo simulado",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Memórias formadas com base nas sementes de realidade",
   "step2.socialNetwork": "Rede de Relações Sociais",
   "step2.socialNetworkDesc": "Conexões individuais e grafo de interação",
-
   "step3.starting": "A iniciar...",
   "step3.generateReport": "Iniciar Geração de Relatório",
-
   "step5.chatWithReportAgent": "Conversar com o Report Agent",
   "step5.chatWithAnyAgent": "Conversar com qualquer agente no mundo",
   "step5.selectChatTarget": "Selecionar alvo da conversa",
@@ -344,7 +337,6 @@
   "step5.selectAll": "Selecionar Todos",
   "step5.clearSelection": "Limpar",
   "step5.generatingSection": "A gerar {title}...",
-
   "graph.demo.n1": "Caso de Mercado",
   "graph.demo.n2": "Analista",
   "graph.demo.n3": "Contabilista",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "Resultado",
   "graph.demo.type.Entity": "Entidade",
   "graph.demo.type.Actor": "Ator",
-
   "auth.signIn": "Iniciar sessão",
   "auth.enterEmail": "Insira o seu email e enviaremos um link mágico para iniciar sessão instantaneamente.",
   "auth.emailPlaceholder": "voce{'@'}empresa.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "Sessão iniciada!",
   "auth.redirecting": "A redirecionar para o AgenikPredict...",
   "auth.logout": "Terminar sessão",
+  "auth.loginTagline": "O poder de ver o amanhã — disponível hoje.",
   "auth.loginSlogan": "Veja o amanhã.\nDecida hoje.",
-
   "console.enrichMarketData": "Enriquecer com dados de mercado em tempo real",
-
   "billing.balance": "Saldo",
   "billing.trialDaysLeft": "{days} dias restantes de teste",
   "billing.trialExpired": "Teste expirado",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "Historico de uso",
   "billing.freeTrialBadge": "Gratis (Teste)",
   "billing.estimatedReportCost": "Estimado ~$1-2 por relatorio",
-  "billing.addCreditsToGenerate": "Adicione creditos para gerar"
+  "billing.addCreditsToGenerate": "Adicione creditos para gerar",
+  "home.welcome": "Bem-vindo, {name}",
+  "home.dropFiles": "Arraste ficheiros ou explore",
+  "home.formats": "PDF · Imagens · Vídeo · URL · YouTube",
+  "home.takePhoto": "Tirar foto",
+  "home.browseFiles": "Explorar ficheiros",
+  "home.promptPlaceholder": "O que quer prever?"
 }

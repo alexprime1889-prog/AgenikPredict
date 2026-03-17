@@ -64,7 +64,7 @@
   "step1.phase.build": "Budowa grafu",
   "step1.phase.complete": "Budowa zakończona",
   "step1.uploading": "Przesyłanie i analiza dokumentów...",
-  "step1.generating": "Generowanie struktury ontologii...",
+  "step1.generating": "Generowanie",
   "step1.building": "Budowanie grafu wiedzy...",
   "step1.complete": "Budowa grafu wiedzy zakończona",
   "step1.nextStep": "Następny krok",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "Pamięć długo-/krótkoterminowa GraphRAG aktualizowana w czasie rzeczywistym",
   "graph.liveUpdating": "Aktualizacja w czasie rzeczywistym...",
   "graph.processingHint": "Część treści jest wciąż przetwarzana, spróbuj odświeżyć graf później",
   "graph.closeHint": "Zamknij podpowiedź",
   "graph.waitingOntology": "Oczekiwanie na generowanie ontologii...",
-
   "history.sectionTitle": "Historia symulacji",
   "history.moreFiles": "+{count} plików",
   "history.noFiles": "Brak plików",
@@ -203,11 +201,9 @@
   "history.graphBuild": "Budowa grafu",
   "history.envSetup": "Konfiguracja środowiska",
   "history.analysisReport": "Raport analityczny",
-  "history.playbackHint": "Krok 3 \u201EUruchomienie symulacji\u201D i Krok 5 \u201EG\u0142\u0119boka interakcja\u201D musz\u0105 by\u0107 uruchamiane w trakcie dzia\u0142ania i nie obs\u0142uguj\u0105 odtwarzania historii",
-
+  "history.playbackHint": "Krok 3 „Uruchomienie symulacji” i Krok 5 „Głęboka interakcja” muszą być uruchamiane w trakcie działania i nie obsługują odtwarzania historii",
   "step1.ontologyGeneration": "Generowanie ontologii",
   "step1.completed": "Zakończono",
-  "step1.generating": "Generowanie",
   "step1.pending": "Oczekuje",
   "step1.ontologyDesc": "LLM analizuje treść dokumentów i wymagania symulacji, wyodrębnia ziarna rzeczywistości i automatycznie generuje odpowiednią strukturę ontologii",
   "step1.analyzingDocs": "Analiza dokumentów...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "Relacja",
   "status.error": "Błąd",
   "status.stepOf": "Krok {current}/{total}",
-
   "step2.simInstanceInit": "Inicjalizacja instancji symulacji",
   "step2.initialized": "Zainicjalizowano",
   "step2.simInstanceDesc": "Utwórz nową instancję symulacji, pobierz szablony parametrów świata symulacji",
@@ -291,7 +286,7 @@
   "step2.estimatedTime": "Przy skali 100 agentów: szacowany czas ~{minutes} minut",
   "step2.recommended": "(zalecane)",
   "step2.estimatedTimeFull": "Przy skali 100 agentów: szacowany czas {minutes} minut",
-  "step2.firstRunTip": "Przy pierwszym uruchomieniu zdecydowanie zalecamy przełączenie na \u201ETryb własny\u201D, aby zmniejszyć liczbę rund symulacji dla szybkiego podglądu i mniejszego ryzyka błędów",
+  "step2.firstRunTip": "Przy pierwszym uruchomieniu zdecydowanie zalecamy przełączenie na „Tryb własny”, aby zmniejszyć liczbę rund symulacji dla szybkiego podglądu i mniejszego ryzyka błędów",
   "step2.backToGraphBuild": "Powrót do budowy grafu",
   "step2.startDualSimulation": "Rozpocznij równoległą symulację dwuświatową",
   "step2.displayAge": "Widoczny wiek",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Wspomnienia ukształtowane na podstawie ziaren rzeczywistości",
   "step2.socialNetwork": "Sieć relacji społecznych",
   "step2.socialNetworkDesc": "Powiązania jednostek i graf interakcji",
-
   "step3.starting": "Uruchamianie...",
   "step3.generateReport": "Rozpocznij generowanie raportu",
-
   "step5.chatWithReportAgent": "Rozmowa z Report Agent",
   "step5.chatWithAnyAgent": "Rozmowa z dowolnym agentem w świecie",
   "step5.selectChatTarget": "Wybierz cel rozmowy",
@@ -344,7 +337,6 @@
   "step5.selectAll": "Zaznacz wszystko",
   "step5.clearSelection": "Wyczyść",
   "step5.generatingSection": "Generowanie {title}...",
-
   "graph.demo.n1": "Studium rynkowe",
   "graph.demo.n2": "Analityk",
   "graph.demo.n3": "Biegły rewident",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "Wynik",
   "graph.demo.type.Entity": "Encja",
   "graph.demo.type.Actor": "Aktor",
-
   "auth.signIn": "Zaloguj się",
   "auth.enterEmail": "Wprowadź swój adres e-mail, a wyślemy Państwu magiczny link do natychmiastowego logowania.",
   "auth.emailPlaceholder": "ty{'@'}firma.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "Zalogowano!",
   "auth.redirecting": "Przekierowanie do AgenikPredict...",
   "auth.logout": "Wyloguj się",
+  "auth.loginTagline": "Siła widzenia jutra — dostępna już dziś.",
   "auth.loginSlogan": "Zobacz jutro.\nZdecyduj dziś.",
-
   "console.enrichMarketData": "Wzbogać o dane rynkowe w czasie rzeczywistym",
-
   "billing.balance": "Saldo",
   "billing.trialDaysLeft": "Pozostało {days} dni okresu próbnego",
   "billing.trialExpired": "Okres próbny wygasł",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "Historia użycia",
   "billing.freeTrialBadge": "Bezpłatnie (Próba)",
   "billing.estimatedReportCost": "Szacunkowo ~$1-2 za raport",
-  "billing.addCreditsToGenerate": "Doładuj konto, aby wygenerować"
+  "billing.addCreditsToGenerate": "Doładuj konto, aby wygenerować",
+  "home.welcome": "Witaj ponownie, {name}",
+  "home.dropFiles": "Przeciągnij pliki lub przeglądaj",
+  "home.formats": "PDF · Zdjęcia · Wideo · URL · YouTube",
+  "home.takePhoto": "Zrób zdjęcie",
+  "home.browseFiles": "Przeglądaj pliki",
+  "home.promptPlaceholder": "Co chcesz przewidzieć?"
 }

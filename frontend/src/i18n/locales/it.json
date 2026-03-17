@@ -64,7 +64,7 @@
   "step1.phase.build": "Costruzione del Grafo",
   "step1.phase.complete": "Costruzione Completata",
   "step1.uploading": "Caricamento e analisi dei documenti...",
-  "step1.generating": "Generazione della struttura dell'ontologia...",
+  "step1.generating": "In generazione",
   "step1.building": "Costruzione del grafo della conoscenza...",
   "step1.complete": "Costruzione del grafo della conoscenza completata",
   "step1.nextStep": "Fase Successiva",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "Aggiornamento in tempo reale della memoria a lungo/breve termine di GraphRAG",
   "graph.liveUpdating": "Aggiornamento in tempo reale...",
   "graph.processingHint": "Alcuni contenuti sono ancora in fase di elaborazione, provate ad aggiornare il grafo più tardi",
   "graph.closeHint": "Chiudi avviso",
   "graph.waitingOntology": "In attesa della generazione dell'ontologia...",
-
   "history.sectionTitle": "Cronologia delle Simulazioni",
   "history.moreFiles": "+{count} file",
   "history.noFiles": "Nessun file",
@@ -204,10 +202,8 @@
   "history.envSetup": "Configurazione Ambiente",
   "history.analysisReport": "Rapporto di Analisi",
   "history.playbackHint": "La Fase 3 \"Avvio Simulazione\" e la Fase 5 \"Interazione Approfondita\" devono essere avviate durante l'esecuzione e non supportano la riproduzione cronologica",
-
   "step1.ontologyGeneration": "Generazione dell'Ontologia",
   "step1.completed": "Completato",
-  "step1.generating": "In generazione",
   "step1.pending": "In attesa",
   "step1.ontologyDesc": "L'LLM analizza il contenuto dei documenti e i requisiti di simulazione, estrae i semi di realtà e genera automaticamente la struttura ontologica appropriata",
   "step1.analyzingDocs": "Analisi dei documenti...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "Relazione",
   "status.error": "Errore",
   "status.stepOf": "Passo {current}/{total}",
-
   "step2.simInstanceInit": "Inizializzazione dell'Istanza di Simulazione",
   "step2.initialized": "Inizializzato",
   "step2.simInstanceDesc": "Creazione di una nuova istanza di simulazione, caricamento dei modelli di parametri del mondo simulato",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "Memorie formate sulla base dei semi di realtà",
   "step2.socialNetwork": "Rete di Relazioni Sociali",
   "step2.socialNetworkDesc": "Connessioni individuali e grafo delle interazioni",
-
   "step3.starting": "Avvio...",
   "step3.generateReport": "Avvia Generazione del Rapporto",
-
   "step5.chatWithReportAgent": "Conversate con il Report Agent",
   "step5.chatWithAnyAgent": "Conversate con qualsiasi agente nel mondo",
   "step5.selectChatTarget": "Selezionate l'obiettivo della conversazione",
@@ -344,7 +337,6 @@
   "step5.selectAll": "Seleziona Tutto",
   "step5.clearSelection": "Cancella",
   "step5.generatingSection": "Generazione di {title}...",
-
   "graph.demo.n1": "Caso di Mercato",
   "graph.demo.n2": "Analista",
   "graph.demo.n3": "Commercialista",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "Output",
   "graph.demo.type.Entity": "Entità",
   "graph.demo.type.Actor": "Attore",
-
   "auth.signIn": "Accedi",
   "auth.enterEmail": "Inserite il vostro indirizzo email e vi invieremo un link magico per accedere istantaneamente.",
   "auth.emailPlaceholder": "voi{'@'}azienda.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "Accesso effettuato!",
   "auth.redirecting": "Reindirizzamento ad AgenikPredict...",
   "auth.logout": "Esci",
+  "auth.loginTagline": "Il potere di vedere il domani — disponibile oggi.",
   "auth.loginSlogan": "Guarda il domani.\nDecidi oggi.",
-
   "console.enrichMarketData": "Arricchisci con dati di mercato in tempo reale",
-
   "billing.balance": "Saldo",
   "billing.trialDaysLeft": "{days} giorni di prova rimasti",
   "billing.trialExpired": "Prova scaduta",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "Cronologia utilizzo",
   "billing.freeTrialBadge": "Gratuito (Prova)",
   "billing.estimatedReportCost": "Stimato ~$1-2 per rapporto",
-  "billing.addCreditsToGenerate": "Aggiungi crediti per generare"
+  "billing.addCreditsToGenerate": "Aggiungi crediti per generare",
+  "home.welcome": "Bentornato, {name}",
+  "home.dropFiles": "Trascina file o sfoglia",
+  "home.formats": "PDF · Immagini · Video · URL · YouTube",
+  "home.takePhoto": "Scatta foto",
+  "home.browseFiles": "Sfoglia file",
+  "home.promptPlaceholder": "Cosa vuoi prevedere?"
 }

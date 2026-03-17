@@ -1,36 +1,46 @@
 <template>
   <div class="lang-switcher" ref="switcher">
-    <button class="lang-btn" @click="isOpen = !isOpen">
+    <button ref="btnRef" class="lang-btn" @click="toggleDropdown">
       <svg class="lang-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
       <span class="lang-label">{{ currentLabel }}</span>
       <svg class="lang-chevron" :class="{ open: isOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
 
-    <Transition name="dropdown">
-      <div v-if="isOpen" class="lang-dropdown">
-        <button
-          v-for="lang in languages"
-          :key="lang.code"
-          class="lang-option"
-          :class="{ active: lang.code === currentLocale }"
-          @click="selectLanguage(lang.code)"
-        >
-          <span class="option-label">{{ lang.label }}</span>
-          <svg v-if="lang.code === currentLocale" class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </button>
-      </div>
-    </Transition>
+    <Teleport to="body">
+      <Transition name="dropdown">
+        <div v-if="isOpen" class="lang-dropdown" :style="dropdownStyle">
+          <button
+            v-for="lang in languages"
+            :key="lang.code"
+            class="lang-option"
+            :class="{ active: lang.code === currentLocale }"
+            @click="selectLanguage(lang.code)"
+          >
+            <span class="option-label">{{ lang.label }}</span>
+            <svg v-if="lang.code === currentLocale" class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLocale } from '../i18n'
 
 const { locale } = useI18n()
 const isOpen = ref(false)
 const switcher = ref(null)
+const btnRef = ref(null)
+
+const dropdownPos = reactive({ top: 0, right: 0 })
+const dropdownStyle = computed(() => ({
+  position: 'fixed',
+  top: dropdownPos.top + 'px',
+  right: dropdownPos.right + 'px',
+}))
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -52,6 +62,15 @@ const currentLabel = computed(() => {
   const lang = languages.find(l => l.code === locale.value)
   return lang ? lang.label : 'English'
 })
+
+function toggleDropdown() {
+  if (!isOpen.value && btnRef.value) {
+    const rect = btnRef.value.getBoundingClientRect()
+    dropdownPos.top = rect.bottom + 6
+    dropdownPos.right = window.innerWidth - rect.right
+  }
+  isOpen.value = !isOpen.value
+}
 
 const selectLanguage = (code) => {
   setLocale(code)
@@ -78,10 +97,10 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   align-items: center;
   gap: 8px;
   padding: 7px 12px;
-  background: var(--card-bg, transparent);
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.15));
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: var(--text-primary, inherit);
+  color: rgba(255, 255, 255, 0.8);
   font-family: 'Space Grotesk', system-ui, sans-serif;
   font-size: 0.82rem;
   font-weight: 500;
@@ -90,8 +109,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 }
 
 .lang-btn:hover {
-  border-color: var(--card-border-hover, rgba(255, 255, 255, 0.3));
-  background: var(--accent-subtle, rgba(255, 255, 255, 0.05));
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .lang-icon {
@@ -114,20 +133,19 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 .lang-chevron.open {
   transform: rotate(180deg);
 }
+</style>
 
+<style>
 .lang-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  inset-inline-end: 0;
   min-width: 180px;
   max-height: 360px;
   overflow-y: auto;
-  background: var(--card-bg, #18181b);
-  border: 1px solid var(--card-border, #27272a);
-  border-radius: 10px;
-  box-shadow: var(--card-shadow-hover, 0 8px 30px rgba(0, 0, 0, 0.35));
-  backdrop-filter: blur(12px);
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(24px);
+  z-index: 99999;
   padding: 4px;
 }
 
@@ -136,7 +154,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 }
 
 .lang-dropdown::-webkit-scrollbar-thumb {
-  background: var(--card-border, #3f3f46);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
 }
 
@@ -147,34 +165,33 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   width: 100%;
   padding: 9px 14px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   font-family: 'Space Grotesk', system-ui, sans-serif;
   font-size: 0.85rem;
   text-align: start;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: var(--text-secondary, #a1a1aa);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .lang-option:hover {
-  background: var(--accent-subtle, rgba(255, 69, 0, 0.1));
-  color: var(--text-primary, #fafafa);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
 
 .lang-option.active {
-  color: var(--accent, #ff4500);
+  color: #ff4500;
   font-weight: 600;
 }
 
 .check-icon {
   width: 14px;
   height: 14px;
-  color: var(--accent, #ff4500);
+  color: #ff4500;
   flex-shrink: 0;
 }
 
-/* Dropdown animation */
 .dropdown-enter-active {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }

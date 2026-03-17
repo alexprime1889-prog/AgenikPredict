@@ -64,7 +64,7 @@
   "step1.phase.build": "بناء الرسم البياني",
   "step1.phase.complete": "اكتمل البناء",
   "step1.uploading": "جارٍ رفع المستندات وتحليلها...",
-  "step1.generating": "جارٍ توليد هيكل الأنطولوجيا...",
+  "step1.generating": "جارٍ التوليد",
   "step1.building": "جارٍ بناء رسم المعرفة البياني...",
   "step1.complete": "اكتمل بناء رسم المعرفة البياني",
   "step1.nextStep": "الخطوة التالية",
@@ -180,13 +180,11 @@
   "lang.nl": "Nederlands",
   "lang.tr": "Türkçe",
   "lang.ar": "العربية",
-
   "graph.memoryUpdating": "يتم تحديث الذاكرة طويلة/قصيرة المدى لـ GraphRAG في الوقت الفعلي",
   "graph.liveUpdating": "جارٍ التحديث في الوقت الفعلي...",
   "graph.processingHint": "لا يزال بعض المحتوى قيد المعالجة، حاول تحديث الرسم البياني لاحقًا",
   "graph.closeHint": "إغلاق التلميح",
   "graph.waitingOntology": "في انتظار توليد الأنطولوجيا...",
-
   "history.sectionTitle": "سجل المحاكاة",
   "history.moreFiles": "+{count} ملفات",
   "history.noFiles": "لا توجد ملفات",
@@ -204,10 +202,8 @@
   "history.envSetup": "إعداد البيئة",
   "history.analysisReport": "تقرير التحليل",
   "history.playbackHint": "الخطوة 3 \"بدء المحاكاة\" والخطوة 5 \"التفاعل العميق\" يجب تشغيلهما أثناء التنفيذ ولا تدعمان إعادة التشغيل من السجل",
-
   "step1.ontologyGeneration": "توليد الأنطولوجيا",
   "step1.completed": "مكتمل",
-  "step1.generating": "جارٍ التوليد",
   "step1.pending": "قيد الانتظار",
   "step1.ontologyDesc": "يحلل نموذج اللغة الكبير محتوى المستند ومتطلبات المحاكاة، ويستخرج بذور الواقع، ويولّد هيكل الأنطولوجيا المناسب تلقائيًا",
   "step1.analyzingDocs": "جارٍ تحليل المستندات...",
@@ -231,7 +227,6 @@
   "step1.relationLabel": "علاقة",
   "status.error": "خطأ",
   "status.stepOf": "خطوة {current}/{total}",
-
   "step2.simInstanceInit": "تهيئة نسخة المحاكاة",
   "step2.initialized": "تمت التهيئة",
   "step2.simInstanceDesc": "إنشاء نسخة محاكاة جديدة، واستدعاء قوالب معلمات عالم المحاكاة",
@@ -313,10 +308,8 @@
   "step2.uniqueMemoryDesc": "ذكريات تشكّلت بناءً على بذور الواقع",
   "step2.socialNetwork": "شبكة العلاقات الاجتماعية",
   "step2.socialNetworkDesc": "الروابط الفردية ورسم التفاعل البياني",
-
   "step3.starting": "جارٍ البدء...",
   "step3.generateReport": "بدء إنشاء التقرير",
-
   "step5.chatWithReportAgent": "محادثة مع وكيل التقارير",
   "step5.chatWithAnyAgent": "محادثة مع أي وكيل في العالم",
   "step5.selectChatTarget": "اختر هدف المحادثة",
@@ -344,7 +337,6 @@
   "step5.selectAll": "تحديد الكل",
   "step5.clearSelection": "مسح",
   "step5.generatingSection": "جارٍ توليد {title}...",
-
   "graph.demo.n1": "حالة سوقية",
   "graph.demo.n2": "محلل",
   "graph.demo.n3": "محاسب قانوني",
@@ -366,7 +358,6 @@
   "graph.demo.type.Output": "مخرجات",
   "graph.demo.type.Entity": "كيان",
   "graph.demo.type.Actor": "فاعل",
-
   "auth.signIn": "تسجيل الدخول",
   "auth.enterEmail": "أدخل بريدك الإلكتروني وسنرسل لك رابطًا سحريًا لتسجيل الدخول فورًا.",
   "auth.emailPlaceholder": "أنت{'@'}شركة.com",
@@ -384,10 +375,9 @@
   "auth.signedIn": "تم تسجيل الدخول!",
   "auth.redirecting": "جارٍ إعادة التوجيه إلى AgenikPredict...",
   "auth.logout": "تسجيل الخروج",
+  "auth.loginTagline": "قوة رؤية الغد — متاحة اليوم.",
   "auth.loginSlogan": "شاهد الغد.\nقرّر اليوم.",
-
   "console.enrichMarketData": "إثراء ببيانات السوق الحية",
-
   "billing.balance": "الرصيد",
   "billing.trialDaysLeft": "متبقي {days} أيام من الفترة التجريبية",
   "billing.trialExpired": "انتهت الفترة التجريبية",
@@ -399,5 +389,11 @@
   "billing.usageHistory": "سجل الاستخدام",
   "billing.freeTrialBadge": "مجاني (تجريبي)",
   "billing.estimatedReportCost": "تقديريًا ~$1-2 لكل تقرير",
-  "billing.addCreditsToGenerate": "أضف رصيدًا للإنشاء"
+  "billing.addCreditsToGenerate": "أضف رصيدًا للإنشاء",
+  "home.welcome": "مرحبًا بعودتك، {name}",
+  "home.dropFiles": "اسحب الملفات أو تصفح",
+  "home.formats": "PDF · صور · فيديو · URL · YouTube",
+  "home.takePhoto": "التقط صورة",
+  "home.browseFiles": "تصفح الملفات",
+  "home.promptPlaceholder": "ماذا تريد أن تتنبأ؟"
 }
