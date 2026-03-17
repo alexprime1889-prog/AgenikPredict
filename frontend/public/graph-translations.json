@@ -1,0 +1,110 @@
+{
+  "en": {
+    "Nextera Corp": "Nextera Corp", "Atlas Dynamics": "Atlas Dynamics", "Quantum Holdings": "Quantum Holdings",
+    "Director A": "Director A", "Co-Founder": "Co-Founder", "Board Member": "Board Member",
+    "CFO": "CFO", "CTO": "CTO", "COO": "COO", "VP Strategy": "VP Strategy", "Founder": "Founder",
+    "BlackRock Fund": "BlackRock Fund", "Sequoia Capital": "Sequoia Capital", "Andreessen Horowitz": "Andreessen Horowitz",
+    "Federal Reserve": "Federal Reserve", "IMF": "IMF", "World Bank": "World Bank",
+    "France Agency": "France Agency", "Netherlands Agency": "Netherlands Agency",
+    "Growth Strategy": "Growth Strategy", "Market Entry": "Market Entry", "Revenue Model": "Revenue Model",
+    "IP Portfolio": "IP Portfolio", "Board Resolution": "Board Resolution", "Term Sheet": "Term Sheet",
+    "Due Diligence": "Due Diligence", "Compliance Framework": "Compliance", "Risk Assessment": "Risk Assessment",
+    "Cap Table": "Cap Table", "Vesting Schedule": "Vesting Schedule", "Anti-Dilution": "Anti-Dilution",
+    "Drag-Along Rights": "Drag-Along Rights", "Tag-Along Rights": "Tag-Along Rights",
+    "Liquidation Preference": "Liquidation Pref.", "Convertible Note": "Convertible Note",
+    "SAFE Agreement": "SAFE Agreement", "Shareholder Agreement": "Shareholder Agmt.",
+    "Operating Agreement": "Operating Agmt.", "Valuation Report": "Valuation Report"
+  },
+  "ru": {
+    "Nextera Corp": "Нэкстера Корп", "Atlas Dynamics": "Атлас Динамикс", "Quantum Holdings": "Квантум Холдинг",
+    "Director A": "Директор", "Co-Founder": "Сооснователь", "Board Member": "Член совета",
+    "CFO": "Финдиректор", "CTO": "Техдиректор", "COO": "Операц. директор", "VP Strategy": "Вице-президент", "Founder": "Основатель",
+    "BlackRock Fund": "Блэкрок Фонд", "Sequoia Capital": "Секвойя Капитал", "Andreessen Horowitz": "Андриссен Хоровиц",
+    "Federal Reserve": "ФРС", "IMF": "МВФ", "World Bank": "Всемирный банк",
+    "France Agency": "Агентство Франции", "Netherlands Agency": "Агентство Нидерландов",
+    "Growth Strategy": "Стратегия роста", "Market Entry": "Выход на рынок", "Revenue Model": "Модель дохода",
+    "IP Portfolio": "Портфель ИС", "Board Resolution": "Решение совета", "Term Sheet": "Терм-шит",
+    "Due Diligence": "Проверка", "Compliance Framework": "Комплаенс", "Risk Assessment": "Оценка рисков",
+    "Cap Table": "Кэп-таблица", "Vesting Schedule": "Вестинг", "Anti-Dilution": "Антиразмытие",
+    "Drag-Along Rights": "Право присоед.", "Tag-Along Rights": "Право совместн.",
+    "Liquidation Preference": "Ликвид. преф.", "Convertible Note": "Конверт. займ",
+    "SAFE Agreement": "SAFE соглашение", "Shareholder Agreement": "Акционерное согл.",
+    "Operating Agreement": "Операц. согл.", "Valuation Report": "Отчёт оценки"
+  },
+  "he": {
+    "Nextera Corp": "נקסטרה קורפ", "Atlas Dynamics": "אטלס דיינמיקס", "Quantum Holdings": "קוונטום הולדינגס",
+    "Director A": "דירקטור", "Co-Founder": "שותף מייסד", "Board Member": "חבר דירקטוריון",
+    "CFO": "סמנכ״ל כספים", "CTO": "סמנכ״ל טכנולוגיה", "COO": "סמנכ״ל תפעול", "VP Strategy": "סמנכ״ל אסטרטגיה", "Founder": "מייסד",
+    "BlackRock Fund": "קרן בלאקרוק", "Sequoia Capital": "סקויה קפיטל", "Andreessen Horowitz": "אנדריסן הורוביץ",
+    "Federal Reserve": "הפדרל ריזרב", "IMF": "קרן המטבע", "World Bank": "הבנק העולמי",
+    "France Agency": "סוכנות צרפת", "Netherlands Agency": "סוכנות הולנד",
+    "Growth Strategy": "אסטרטגיית צמיחה", "Market Entry": "כניסה לשוק", "Revenue Model": "מודל הכנסות",
+    "IP Portfolio": "תיק קניין רוחני", "Board Resolution": "החלטת דירקטוריון", "Term Sheet": "דף תנאים",
+    "Due Diligence": "בדיקת נאותות", "Compliance Framework": "ציות", "Risk Assessment": "הערכת סיכונים",
+    "Cap Table": "טבלת הון", "Vesting Schedule": "לוח הבשלה", "Anti-Dilution": "אנטי-דילול",
+    "Drag-Along Rights": "זכות גרירה", "Tag-Along Rights": "זכות הצטרפות",
+    "Liquidation Preference": "עדיפות פירוק", "Convertible Note": "שטר המיר",
+    "SAFE Agreement": "הסכם SAFE", "Shareholder Agreement": "הסכם בעלי מניות",
+    "Operating Agreement": "הסכם תפעול", "Valuation Report": "דוח הערכת שווי"
+  },
+  "ar": {
+    "Nextera Corp": "نكسترا كورب", "Atlas Dynamics": "أطلس ديناميكس", "Quantum Holdings": "كوانتوم هولدينغز",
+    "Director A": "مدير", "Co-Founder": "شريك مؤسس", "Board Member": "عضو مجلس",
+    "CFO": "المدير المالي", "CTO": "المدير التقني", "COO": "المدير التنفيذي", "VP Strategy": "نائب الاستراتيجية", "Founder": "المؤسس",
+    "BlackRock Fund": "صندوق بلاكروك", "Sequoia Capital": "سيكويا كابيتال", "Andreessen Horowitz": "أندريسن هورويتز",
+    "Federal Reserve": "الاحتياطي الفيدرالي", "IMF": "صندوق النقد", "World Bank": "البنك الدولي",
+    "France Agency": "وكالة فرنسا", "Netherlands Agency": "وكالة هولندا",
+    "Growth Strategy": "استراتيجية النمو", "Market Entry": "دخول السوق", "Revenue Model": "نموذج الإيرادات",
+    "IP Portfolio": "محفظة الملكية", "Board Resolution": "قرار المجلس", "Term Sheet": "ورقة الشروط",
+    "Due Diligence": "العناية الواجبة", "Compliance Framework": "الامتثال", "Risk Assessment": "تقييم المخاطر",
+    "Cap Table": "جدول الرسملة", "Vesting Schedule": "جدول الاستحقاق", "Anti-Dilution": "مانع التخفيف",
+    "Drag-Along Rights": "حقوق السحب", "Tag-Along Rights": "حقوق الانضمام",
+    "Liquidation Preference": "أفضلية التصفية", "Convertible Note": "سند قابل للتحويل",
+    "SAFE Agreement": "اتفاقية SAFE", "Shareholder Agreement": "اتفاقية المساهمين",
+    "Operating Agreement": "اتفاقية التشغيل", "Valuation Report": "تقرير التقييم"
+  },
+  "es": {
+    "Director A": "Director", "Co-Founder": "Cofundador", "Board Member": "Consejero",
+    "CFO": "Dir. Financiero", "CTO": "Dir. Técnico", "COO": "Dir. Operaciones", "VP Strategy": "VP Estrategia", "Founder": "Fundador",
+    "Growth Strategy": "Estrategia de crecimiento", "Market Entry": "Entrada al mercado", "Revenue Model": "Modelo de ingresos",
+    "Due Diligence": "Debida diligencia", "Risk Assessment": "Evaluación de riesgos", "Compliance Framework": "Cumplimiento"
+  },
+  "de": {
+    "Director A": "Direktor", "Co-Founder": "Mitgründer", "Board Member": "Vorstandsmitglied",
+    "CFO": "Finanzvorstand", "CTO": "Technikvorstand", "COO": "Betriebsleiter", "VP Strategy": "VP Strategie", "Founder": "Gründer",
+    "Growth Strategy": "Wachstumsstrategie", "Market Entry": "Markteintritt", "Revenue Model": "Erlösmodell",
+    "Due Diligence": "Sorgfaltsprüfung", "Risk Assessment": "Risikobewertung", "Compliance Framework": "Compliance"
+  },
+  "fr": {
+    "Director A": "Directeur", "Co-Founder": "Cofondateur", "Board Member": "Administrateur",
+    "CFO": "Dir. Financier", "CTO": "Dir. Technique", "COO": "Dir. Opérations", "VP Strategy": "VP Stratégie", "Founder": "Fondateur",
+    "Growth Strategy": "Stratégie de croissance", "Market Entry": "Entrée sur le marché", "Revenue Model": "Modèle de revenus",
+    "Due Diligence": "Diligence raisonnable", "Risk Assessment": "Évaluation des risques", "Compliance Framework": "Conformité"
+  },
+  "it": {
+    "Director A": "Direttore", "Co-Founder": "Cofondatore", "Board Member": "Consigliere",
+    "CFO": "Dir. Finanziario", "CTO": "Dir. Tecnico", "COO": "Dir. Operativo", "VP Strategy": "VP Strategia", "Founder": "Fondatore",
+    "Growth Strategy": "Strategia di crescita", "Market Entry": "Ingresso nel mercato", "Revenue Model": "Modello di ricavi",
+    "Due Diligence": "Due diligence", "Risk Assessment": "Valutazione rischi", "Compliance Framework": "Conformità"
+  },
+  "pt": {
+    "Director A": "Diretor", "Co-Founder": "Cofundador", "Board Member": "Conselheiro",
+    "Growth Strategy": "Estratégia de crescimento", "Market Entry": "Entrada no mercado", "Revenue Model": "Modelo de receitas",
+    "Due Diligence": "Diligência prévia", "Risk Assessment": "Avaliação de riscos", "Founder": "Fundador"
+  },
+  "pl": {
+    "Director A": "Dyrektor", "Co-Founder": "Współzałożyciel", "Board Member": "Członek zarządu",
+    "Growth Strategy": "Strategia wzrostu", "Market Entry": "Wejście na rynek", "Revenue Model": "Model przychodów",
+    "Due Diligence": "Badanie", "Risk Assessment": "Ocena ryzyka", "Founder": "Założyciel"
+  },
+  "nl": {
+    "Director A": "Directeur", "Co-Founder": "Medeoprichter", "Board Member": "Bestuurslid",
+    "Growth Strategy": "Groeistrategie", "Market Entry": "Markttoetreding", "Revenue Model": "Omzetmodel",
+    "Due Diligence": "Zorgvuldigheid", "Risk Assessment": "Risicobeoordeling", "Founder": "Oprichter"
+  },
+  "tr": {
+    "Director A": "Direktör", "Co-Founder": "Kurucu Ortak", "Board Member": "Yönetim Kurulu",
+    "Growth Strategy": "Büyüme Stratejisi", "Market Entry": "Pazara Giriş", "Revenue Model": "Gelir Modeli",
+    "Due Diligence": "Durum Tespiti", "Risk Assessment": "Risk Değerlendirmesi", "Founder": "Kurucu"
+  }
+}
