@@ -94,3 +94,12 @@ AGENTS.md
 **/AGENTS.md
 .claude/
 **/.claude/
+
+# Proprietary / commercial code (never publish)
+backend/app/api/billing.py
+backend/app/api/admin.py
+frontend/src/api/billing.js
+frontend/src/api/admin.js
+frontend/src/components/BillingBadge.vue
+frontend/src/views/AdminView.vue
+TERMS_OF_USE.md
