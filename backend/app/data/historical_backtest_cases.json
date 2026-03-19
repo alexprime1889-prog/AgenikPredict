@@ -1,0 +1,136 @@
+{
+  "version": "pilot-v1",
+  "updated_at": "2026-03-18",
+  "cases": [
+    {
+      "case_id": "openai-board-crisis-2023",
+      "title": "OpenAI Board Crisis",
+      "reference_date": "2023-11-17",
+      "domain": "ai-governance",
+      "summary": "Sam Altman was removed from OpenAI, employee backlash escalated immediately, Microsoft moved to absorb key staff, and Altman returned within days with a restructured board.",
+      "ground_truth_summary": "The dominant realized path was a fast re-consolidation around management continuity rather than a durable governance reset or prolonged organizational fracture.",
+      "evaluation_focus": [
+        "employee coordination speed",
+        "partner leverage",
+        "governance credibility shock",
+        "narrative reversal timing"
+      ],
+      "tags": [
+        "ai",
+        "governance",
+        "leadership",
+        "platform"
+      ],
+      "suggested_simulation_requirement": "Predict the near-term employee, partner, and market reaction to a sudden AI-lab leadership removal and the likely stabilized outcome over the next 2 weeks.",
+      "suggested_outcomes": {
+        "Bull case": "not_observed",
+        "Base case": "observed",
+        "Bear case": "not_observed"
+      }
+    },
+    {
+      "case_id": "svb-collapse-2023",
+      "title": "Silicon Valley Bank Collapse",
+      "reference_date": "2023-03-10",
+      "domain": "banking",
+      "summary": "Silicon Valley Bank failed after a concentrated depositor run, venture-backed companies scrambled for payroll safety, and regulators moved rapidly to contain broader panic.",
+      "ground_truth_summary": "The realized path was a sharp liquidity shock followed by fast policy containment, not a full systemic banking meltdown but not a clean no-contagion outcome either.",
+      "evaluation_focus": [
+        "deposit flight behavior",
+        "policy response speed",
+        "venture ecosystem contagion",
+        "confidence restoration"
+      ],
+      "tags": [
+        "banking",
+        "liquidity",
+        "venture",
+        "policy"
+      ],
+      "suggested_simulation_requirement": "Predict the immediate market, startup, and regulatory reaction to a sudden regional-bank liquidity crisis and the likely outcome over the next month.",
+      "suggested_outcomes": {
+        "Bull case": "not_observed",
+        "Base case": "observed",
+        "Bear case": "partial"
+      }
+    },
+    {
+      "case_id": "crowdstrike-outage-2024",
+      "title": "CrowdStrike Global Outage",
+      "reference_date": "2024-07-19",
+      "domain": "enterprise-software",
+      "summary": "A faulty CrowdStrike update caused widespread Windows failures across airlines, hospitals, banks, and enterprises, triggering a global operational shock.",
+      "ground_truth_summary": "The realized path was an acute operational crisis with broad reputational damage and customer scrutiny, but not a permanent category collapse for endpoint security.",
+      "evaluation_focus": [
+        "enterprise incident response",
+        "customer trust erosion",
+        "regulatory scrutiny",
+        "vendor concentration risk"
+      ],
+      "tags": [
+        "software",
+        "outage",
+        "enterprise",
+        "cybersecurity"
+      ],
+      "suggested_simulation_requirement": "Predict the near-term customer, regulator, and market reaction to a global software update outage affecting critical infrastructure and large enterprises.",
+      "suggested_outcomes": {
+        "Bull case": "not_observed",
+        "Base case": "partial",
+        "Bear case": "observed"
+      }
+    },
+    {
+      "case_id": "ftx-collapse-2022",
+      "title": "FTX Collapse",
+      "reference_date": "2022-11-11",
+      "domain": "crypto",
+      "summary": "FTX collapsed after a confidence crisis around reserves and related-party exposure, causing rapid counterparty panic, legal fallout, and sector-wide distrust.",
+      "ground_truth_summary": "The realized path was a severe trust collapse with extended regulatory and reputational consequences, not a quick contained exchange failure.",
+      "evaluation_focus": [
+        "counterparty contagion",
+        "trust collapse velocity",
+        "regulatory backlash",
+        "narrative spillover"
+      ],
+      "tags": [
+        "crypto",
+        "exchange",
+        "liquidity",
+        "regulation"
+      ],
+      "suggested_simulation_requirement": "Predict the near-term customer, regulatory, and market reaction to a major crypto exchange insolvency and the likely sector-level fallout over the next quarter.",
+      "suggested_outcomes": {
+        "Bull case": "not_observed",
+        "Base case": "not_observed",
+        "Bear case": "observed"
+      }
+    },
+    {
+      "case_id": "meta-threads-launch-2023",
+      "title": "Meta Threads Launch",
+      "reference_date": "2023-07-05",
+      "domain": "consumer-platforms",
+      "summary": "Meta launched Threads into a moment of instability at Twitter/X, triggering rapid signup growth, strong media attention, and questions about long-term retention.",
+      "ground_truth_summary": "The realized path was a strong launch spike followed by a retention and engagement normalization phase rather than immediate decisive platform replacement.",
+      "evaluation_focus": [
+        "migration enthusiasm",
+        "retention decay",
+        "competitor reaction",
+        "media narrative durability"
+      ],
+      "tags": [
+        "consumer",
+        "social",
+        "platform",
+        "retention"
+      ],
+      "suggested_simulation_requirement": "Predict the near-term user, creator, advertiser, and media reaction to a new social platform launching into a competitor trust crisis.",
+      "suggested_outcomes": {
+        "Bull case": "not_observed",
+        "Base case": "observed",
+        "Bear case": "not_observed"
+      }
+    }
+  ]
+}

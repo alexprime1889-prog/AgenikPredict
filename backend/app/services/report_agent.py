@@ -13,15 +13,20 @@ import os
 import json
 import time
 import re
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Optional, Callable, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
 from ..config import Config
+from ..models.prediction_ledger import PredictionLedgerManager
 from ..utils.llm_client import LLMClient, UsageAccumulator
 from ..utils.logger import get_logger
-from ..utils.locale import get_llm_language_instruction
+from ..utils.locale import get_llm_language_instruction, normalize_locale_code
+from .artifact_store import REPORT_NAMESPACE, get_artifact_store
+from .live_evidence import LiveEvidenceService
+from .perplexity_provider import PerplexityProvider
+from .source_manifest import SourceEntry, SourceManifest
 from .zep_tools import (
     ZepToolsService, 
     SearchResult, 
@@ -31,6 +36,18 @@ from .zep_tools import (
 )
 
 logger = get_logger('agenikpredict.report_agent')
+
+
+ANALYSIS_MODE_QUICK = "quick"
+ANALYSIS_MODE_GLOBAL = "global"
+ALLOWED_ANALYSIS_MODES = {ANALYSIS_MODE_QUICK, ANALYSIS_MODE_GLOBAL}
+
+
+def normalize_analysis_mode(mode: Optional[str]) -> str:
+    normalized = str(mode or "").strip().lower()
+    if normalized in ALLOWED_ANALYSIS_MODES:
+        return normalized
+    return ANALYSIS_MODE_GLOBAL
 
 
 class ReportLogger:
@@ -50,7 +67,7 @@ class ReportLogger:
         """
         self.report_id = report_id
         self.log_file_path = os.path.join(
-            Config.UPLOAD_FOLDER, 'reports', report_id, 'agent_log.jsonl'
+            ReportManager._get_report_folder(report_id, ensure=True), 'agent_log.jsonl'
         )
         self.start_time = datetime.now()
         self._ensure_log_file()
@@ -96,8 +113,9 @@ class ReportLogger:
         # Append to JSONL file
         with open(self.log_file_path, 'a', encoding='utf-8') as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+        ReportManager.flush_report(self.report_id)
     
-    def log_start(self, simulation_id: str, graph_id: str, simulation_requirement: str):
+    def log_start(self, simulation_id: str, graph_id: str, simulation_requirement: str, analysis_mode: str = ANALYSIS_MODE_GLOBAL):
         """Log report generation start"""
         self.log(
             action="report_start",
@@ -105,6 +123,7 @@ class ReportLogger:
             details={
                 "simulation_id": simulation_id,
                 "graph_id": graph_id,
+                "analysis_mode": analysis_mode,
                 "simulation_requirement": simulation_requirement,
                 "message": "Report generation task started"
             }
@@ -321,7 +340,7 @@ class ReportConsoleLogger:
         """
         self.report_id = report_id
         self.log_file_path = os.path.join(
-            Config.UPLOAD_FOLDER, 'reports', report_id, 'console_log.txt'
+            ReportManager._get_report_folder(report_id, ensure=True), 'console_log.txt'
         )
         self._ensure_log_file()
         self._file_handler = None
@@ -335,9 +354,17 @@ class ReportConsoleLogger:
     def _setup_file_handler(self):
         """Set up file handler to write logs to file simultaneously"""
         import logging
+
+        report_id = self.report_id
+
+        class _ArtifactFlushingFileHandler(logging.FileHandler):
+            def emit(self_inner, record):
+                super().emit(record)
+                self_inner.flush()
+                ReportManager.flush_report(report_id)
         
         # Create file handler
-        self._file_handler = logging.FileHandler(
+        self._file_handler = _ArtifactFlushingFileHandler(
             self.log_file_path,
             mode='a',
             encoding='utf-8'
@@ -452,6 +479,11 @@ class Report:
     completed_at: str = ""
     error: Optional[str] = None
     usage: Optional[Dict[str, int]] = None
+    prediction_summary: Optional[Dict[str, Any]] = None
+    language_used: str = "en"
+    analysis_mode: str = ANALYSIS_MODE_GLOBAL
+    source_manifest_summary: Dict[str, Any] = field(default_factory=dict)
+    explainability: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -466,7 +498,19 @@ class Report:
             "completed_at": self.completed_at,
             "error": self.error,
             "usage": self.usage,
+            "prediction_summary": self.prediction_summary,
+            "language_used": self.language_used,
+            "analysis_mode": normalize_analysis_mode(self.analysis_mode),
+            "source_manifest_summary": dict(self.source_manifest_summary or {}),
+            "explainability": dict(self.explainability or {}),
         }
+
+
+@dataclass
+class ToolExecutionResult:
+    text: str
+    sources: List[SourceEntry] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -548,6 +592,130 @@ Workflow:
 - Interview summary and viewpoint comparison
 
 [Important] Requires OASIS simulation environment to be running!"""
+
+TOOL_DESC_LIVE_NEWS_BRIEF = """\
+[Live News Brief - Current-world headlines]
+Retrieves recent public headlines for a query from a live news RSS provider.
+Use this to validate whether the outside world has materially changed since the
+uploaded documents were collected.
+
+[Use cases]
+- Need to check current public developments around a company, issue, or event
+- Need recent headlines to compare with graph/simulation output
+- Need external evidence with timestamps and source links
+
+[Return content]
+- Recent headlines
+- Source names
+- Published timestamps
+- Source links
+- Retrieval warnings if live data is unavailable"""
+
+TOOL_DESC_LIVE_MARKET_SNAPSHOT = """\
+[Live Market Snapshot - Current market context]
+Retrieves current quotes for ticker symbols detected in the query or report context.
+Use this to anchor the report in current market conditions, not only simulated reactions.
+
+[Use cases]
+- Need to validate current stock/market context
+- Need price/change context for a ticker already mentioned in the analysis
+- Need to compare simulation expectations with live market movement
+
+[Return content]
+- Detected ticker symbols
+- Current quotes and percent changes
+- Exchange and currency info
+- Retrieval warnings if market data is unavailable"""
+
+TOOL_DESC_WEB_SEARCH = """\
+[Web Search - Discovery only]
+Retrieves structured web search results from an external discovery provider.
+Use this only to widen discovery and synthesis around recent public information.
+It is not the canonical source of market truth.
+
+[Use cases]
+- Need discovery across current public web coverage
+- Need corroborating external sources for non-market developments
+- Need a fast synthesis pass on recent outside-world reporting
+
+[Return content]
+- Search result titles
+- Snippets
+- Published/updated timestamps when available
+- Source links
+- Retrieval warnings if web search is unavailable"""
+
+PROBABILITY_SUMMARY_SYSTEM_PROMPT = """\
+You are converting a simulation report into a structured scenario summary.
+
+Your job is to produce a concise JSON object with exactly three scenarios:
+- Bull case
+- Base case
+- Bear case
+
+Requirements:
+1. Return valid JSON only.
+2. Use integer probabilities that sum to 100 after your best effort.
+3. Stay grounded in the report content and simulation requirement; do not invent unsupported claims.
+4. Keep each summary concise and specific.
+5. Use arrays for drivers, risks, and assumptions (3-5 items each when possible).
+6. Keep the scenario `name` values exactly as English keys: `Bull case`, `Base case`, `Bear case`.
+7. All other descriptive fields may follow the requested report language.
+
+Output schema:
+{
+  "forecast_horizon": "string",
+  "confidence_note": "string",
+  "scenarios": [
+    {
+      "name": "Bull case",
+      "probability": 0,
+      "timeframe": "string",
+      "summary": "string",
+      "key_drivers": ["string"],
+      "key_risks": ["string"],
+      "assumptions": ["string"]
+    },
+    {
+      "name": "Base case",
+      "probability": 0,
+      "timeframe": "string",
+      "summary": "string",
+      "key_drivers": ["string"],
+      "key_risks": ["string"],
+      "assumptions": ["string"]
+    },
+    {
+      "name": "Bear case",
+      "probability": 0,
+      "timeframe": "string",
+      "summary": "string",
+      "key_drivers": ["string"],
+      "key_risks": ["string"],
+      "assumptions": ["string"]
+    }
+  ],
+  "caveats": ["string"]
+}"""
+
+EXPLAINABILITY_SYSTEM_PROMPT = """\
+You are generating a compact explainability block for a completed simulation report.
+
+Requirements:
+1. Return valid JSON only.
+2. Keep all descriptive text in the requested report language.
+3. Stay grounded in the report content and provided source shortlist.
+4. `why_this_conclusion` must be one concise paragraph.
+5. `basis_summary` must be 3-5 short bullet-style strings.
+6. `source_ids` must reference source IDs from the provided shortlist only.
+7. Do not invent source IDs or unsupported claims.
+
+Output schema:
+{
+  "why_this_conclusion": "string",
+  "basis_summary": ["string"],
+  "source_ids": ["src_123"]
+}"""
 
 # -- Outline planning prompt --
 
@@ -646,7 +814,7 @@ DO focus on "what will the future look like" - simulation results ARE the predic
    - You are observing the future rehearsal from a "God's eye view"
    - All content must come from events and Agent behaviors in the simulated world
    - Do NOT use your own knowledge to write report content
-   - Each section must call tools at least 3 times (max 5) to observe the simulated world representing the future
+   - Each section must call tools at least {min_tool_calls} times (max {max_tool_calls}) to observe the simulated world representing the future
 
 2. [Must quote Agents' original speech and actions]
    - Agent speech and behavior are predictions of future group behavior
@@ -705,16 +873,16 @@ This section analyzes...
 ```
 
 ═══════════════════════════════════════════════════════════════
-[Available Retrieval Tools] (call 3-5 times per section)
+[Available Retrieval Tools] (call {min_tool_calls}-{max_tool_calls} times per section)
 ═══════════════════════════════════════════════════════════════
 
 {tools_description}
 
 [Tool Usage Tips - Mix different tools, do not use only one]
-- insight_forge: Deep insight analysis, auto-decomposes questions and multi-dimensional retrieval of facts and relationships
-- panorama_search: Wide-angle panoramic search, understand full picture, timeline and evolution process
-- quick_search: Quickly verify a specific information point
-- interview_agents: Interview simulation Agents, get first-person perspectives and real reactions from different roles
+- Mix graph retrieval, agent interviews, and live-current-world evidence when useful
+- Prefer graph tools for structural simulation reasoning and causal chains
+- Use live tools to validate current headlines and market context, not to replace graph evidence
+- Use quick retrieval for fact checks and deeper tools for synthesis
 
 ═══════════════════════════════════════════════════════════════
 [Workflow]
@@ -874,10 +1042,8 @@ class ReportAgent:
     3. Reflection phase: Check content completeness and accuracy
     """
     
-    # Max tool calls per section
+    # Legacy defaults retained for compatibility/reference; runtime uses instance values.
     MAX_TOOL_CALLS_PER_SECTION = 5
-    
-    # Max reflection rounds
     MAX_REFLECTION_ROUNDS = 3
     
     # Max tool calls per chat
@@ -892,7 +1058,8 @@ class ReportAgent:
         zep_tools: Optional[ZepToolsService] = None,
         language: Optional[str] = None,
         custom_persona: str = '',
-        report_variables: dict = None
+        report_variables: dict = None,
+        analysis_mode: str = ANALYSIS_MODE_GLOBAL,
     ):
         """
         Initialize Report Agent
@@ -910,13 +1077,29 @@ class ReportAgent:
         self.graph_id = graph_id
         self.simulation_id = simulation_id
         self.simulation_requirement = simulation_requirement
-        self.language_instruction = get_llm_language_instruction(language)
+        self.language = normalize_locale_code(language)
+        self.language_instruction = get_llm_language_instruction(self.language)
         self.custom_persona = custom_persona or ''
         self.report_variables = report_variables or {}
+        self.analysis_mode = normalize_analysis_mode(analysis_mode)
 
         self.llm = llm_client or LLMClient()
         self.zep_tools = zep_tools or ZepToolsService()
+        self.live_evidence = LiveEvidenceService()
+        self.perplexity = PerplexityProvider()
         self.usage = UsageAccumulator()
+        self.source_manifest: Optional[SourceManifest] = None
+
+        configured_tool_calls = max(1, int(getattr(Config, "REPORT_AGENT_MAX_TOOL_CALLS", self.MAX_TOOL_CALLS_PER_SECTION)))
+        configured_reflection_rounds = max(1, int(getattr(Config, "REPORT_AGENT_MAX_REFLECTION_ROUNDS", self.MAX_REFLECTION_ROUNDS)))
+        if self.analysis_mode == ANALYSIS_MODE_QUICK:
+            self.max_tool_calls_per_section = min(configured_tool_calls, 2)
+            self.max_reflection_rounds = min(configured_reflection_rounds, 2)
+            self.min_tool_calls_per_section = 1
+        else:
+            self.max_tool_calls_per_section = configured_tool_calls
+            self.max_reflection_rounds = configured_reflection_rounds
+            self.min_tool_calls_per_section = min(3, self.max_tool_calls_per_section)
 
         # Tool definitions
         self.tools = self._define_tools()
@@ -926,7 +1109,14 @@ class ReportAgent:
         # Console logger (initialized in generate_report)
         self.console_logger: Optional[ReportConsoleLogger] = None
         
-        logger.info(f"ReportAgent initialized: graph_id={graph_id}, simulation_id={simulation_id}")
+        logger.info(
+            "ReportAgent initialized: graph_id=%s, simulation_id=%s, analysis_mode=%s, tool_limit=%s, reflection_limit=%s",
+            graph_id,
+            simulation_id,
+            self.analysis_mode,
+            self.max_tool_calls_per_section,
+            self.max_reflection_rounds,
+        )
     
     def _build_variables_context(self) -> str:
         """Format report_variables into a prompt section."""
@@ -943,17 +1133,65 @@ class ReportAgent:
             return ''
         return f'\n[Custom Analysis Perspective]\n{self.custom_persona}\n'
 
+    def _outline_section_bounds(self) -> Tuple[int, int]:
+        if self.analysis_mode == ANALYSIS_MODE_QUICK:
+            return 2, 3
+        return 2, 5
+
+    def _allowed_legacy_aliases(self) -> set[str]:
+        aliases = {"search_graph"}
+        if self.analysis_mode == ANALYSIS_MODE_GLOBAL:
+            aliases.update({
+                "get_graph_statistics",
+                "get_entity_summary",
+                "get_entities_by_type",
+                "get_simulation_context",
+            })
+        return aliases
+
+    def _make_source_entry(
+        self,
+        *,
+        provider: str,
+        source_type: str,
+        query: str = "",
+        title: str = "",
+        url: str = "",
+        snippet: str = "",
+        published_at: Optional[str] = None,
+        last_updated: Optional[str] = None,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> SourceEntry:
+        return SourceEntry.create(
+            provider=provider,
+            source_type=source_type,
+            query=query,
+            title=title,
+            url=url,
+            snippet=snippet,
+            published_at=published_at,
+            last_updated=last_updated,
+            language=self.language,
+            extra=extra,
+        )
+
+    @staticmethod
+    def _preview(value: Any, limit: int = 400) -> str:
+        text = str(value or "").strip()
+        if len(text) <= limit:
+            return text
+        return text[: limit - 3].rstrip() + "..."
+
+    def _record_tool_result(self, result: ToolExecutionResult) -> None:
+        if not self.source_manifest:
+            return
+        self.source_manifest.add_sources(result.sources)
+        for warning in result.warnings:
+            self.source_manifest.add_warning(warning)
+
     def _define_tools(self) -> Dict[str, Dict[str, Any]]:
         """Define available tools"""
-        return {
-            "insight_forge": {
-                "name": "insight_forge",
-                "description": TOOL_DESC_INSIGHT_FORGE,
-                "parameters": {
-                    "query": "The question or topic you want to deeply analyze",
-                    "report_context": "Current report section context (optional, helps generate more precise sub-questions)"
-                }
-            },
+        tools = {
             "panorama_search": {
                 "name": "panorama_search",
                 "description": TOOL_DESC_PANORAMA_SEARCH,
@@ -969,8 +1207,18 @@ class ReportAgent:
                     "query": "Search query string",
                     "limit": "Number of results to return (optional, default 10)"
                 }
-            },
-            "interview_agents": {
+            }
+        }
+        if self.analysis_mode == ANALYSIS_MODE_GLOBAL:
+            tools["insight_forge"] = {
+                "name": "insight_forge",
+                "description": TOOL_DESC_INSIGHT_FORGE,
+                "parameters": {
+                    "query": "The question or topic you want to deeply analyze",
+                    "report_context": "Current report section context (optional, helps generate more precise sub-questions)"
+                }
+            }
+            tools["interview_agents"] = {
                 "name": "interview_agents",
                 "description": TOOL_DESC_INTERVIEW_AGENTS,
                 "parameters": {
@@ -978,9 +1226,36 @@ class ReportAgent:
                     "max_agents": "Maximum number of Agents to interview (optional, default 5, max 10)"
                 }
             }
-        }
+        if self.live_evidence.enabled:
+            tools["live_news_brief"] = {
+                "name": "live_news_brief",
+                "description": TOOL_DESC_LIVE_NEWS_BRIEF,
+                "parameters": {
+                    "query": "Query string for recent live headlines",
+                    "max_items": "Maximum number of live headlines to return (optional, default 5)"
+                }
+            }
+            tools["live_market_snapshot"] = {
+                "name": "live_market_snapshot",
+                "description": TOOL_DESC_LIVE_MARKET_SNAPSHOT,
+                "parameters": {
+                    "query": "Query string containing the company/ticker/topic you want current market context for",
+                    "context": "Additional context text to help detect ticker symbols (optional)",
+                    "max_symbols": "Maximum number of ticker symbols to resolve (optional, default 5)"
+                }
+            }
+        if self.analysis_mode == ANALYSIS_MODE_GLOBAL and self.perplexity.available:
+            tools["web_search"] = {
+                "name": "web_search",
+                "description": TOOL_DESC_WEB_SEARCH,
+                "parameters": {
+                    "query": "Search query string",
+                    "max_results": "Maximum number of web search results to return (optional, default 5)"
+                }
+            }
+        return tools
     
-    def _execute_tool(self, tool_name: str, parameters: Dict[str, Any], report_context: str = "") -> str:
+    def _execute_tool(self, tool_name: str, parameters: Dict[str, Any], report_context: str = "") -> ToolExecutionResult:
         """
         Execute tool call
         
@@ -990,11 +1265,20 @@ class ReportAgent:
             report_context: Report context (for InsightForge)
             
         Returns:
-            Tool execution result (text format)
+            Structured tool execution result
         """
         logger.info(f"Executing tool: {tool_name}, parameters: {parameters}")
         
         try:
+            if self.analysis_mode == ANALYSIS_MODE_QUICK and tool_name in {
+                "get_graph_statistics",
+                "get_entity_summary",
+                "get_entities_by_type",
+                "get_simulation_context",
+            }:
+                message = f"{tool_name} is unavailable in quick mode."
+                return ToolExecutionResult(text=message, warnings=[message])
+
             if tool_name == "insight_forge":
                 query = parameters.get("query", "")
                 ctx = parameters.get("report_context", "") or report_context
@@ -1004,10 +1288,36 @@ class ReportAgent:
                     simulation_requirement=self.simulation_requirement,
                     report_context=ctx
                 )
-                return result.to_text()
+                sources = [
+                    self._make_source_entry(
+                        provider="zep_graph",
+                        source_type="graph_fact",
+                        query=query,
+                        title=f"InsightForge fact {index}",
+                        snippet=fact,
+                        extra={"tool": tool_name, "report_context": self._preview(ctx, 200)},
+                    )
+                    for index, fact in enumerate((result.semantic_facts or [])[:8], start=1)
+                ]
+                if not sources:
+                    sources.append(
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="graph_summary",
+                            query=query,
+                            title="InsightForge summary",
+                            snippet=self._preview(result.to_text(), 500),
+                            extra={
+                                "tool": tool_name,
+                                "total_facts": result.total_facts,
+                                "total_entities": result.total_entities,
+                                "total_relationships": result.total_relationships,
+                            },
+                        )
+                    )
+                return ToolExecutionResult(text=result.to_text(), sources=sources)
             
             elif tool_name == "panorama_search":
-                # Breadth search - get full picture
                 query = parameters.get("query", "")
                 include_expired = parameters.get("include_expired", True)
                 if isinstance(include_expired, str):
@@ -1017,10 +1327,49 @@ class ReportAgent:
                     query=query,
                     include_expired=include_expired
                 )
-                return result.to_text()
+                fact_entries: List[SourceEntry] = []
+                for index, fact in enumerate((result.active_facts or [])[:6], start=1):
+                    fact_entries.append(
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="graph_active_fact",
+                            query=query,
+                            title=f"Active graph fact {index}",
+                            snippet=fact,
+                            extra={"tool": tool_name, "include_expired": include_expired},
+                        )
+                    )
+                for index, fact in enumerate((result.historical_facts or [])[:4], start=1):
+                    fact_entries.append(
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="graph_historical_fact",
+                            query=query,
+                            title=f"Historical graph fact {index}",
+                            snippet=fact,
+                            extra={"tool": tool_name, "include_expired": include_expired},
+                        )
+                    )
+                if not fact_entries:
+                    fact_entries.append(
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="graph_summary",
+                            query=query,
+                            title="Panorama summary",
+                            snippet=self._preview(result.to_text(), 500),
+                            extra={
+                                "tool": tool_name,
+                                "total_nodes": result.total_nodes,
+                                "total_edges": result.total_edges,
+                                "active_count": result.active_count,
+                                "historical_count": result.historical_count,
+                            },
+                        )
+                    )
+                return ToolExecutionResult(text=result.to_text(), sources=fact_entries)
             
             elif tool_name == "quick_search":
-                # Simple search - quick retrieval
                 query = parameters.get("query", "")
                 limit = parameters.get("limit", 10)
                 if isinstance(limit, str):
@@ -1030,10 +1379,31 @@ class ReportAgent:
                     query=query,
                     limit=limit
                 )
-                return result.to_text()
+                sources = [
+                    self._make_source_entry(
+                        provider="zep_graph",
+                        source_type="graph_fact",
+                        query=query,
+                        title=f"Quick search fact {index}",
+                        snippet=fact,
+                        extra={"tool": tool_name, "limit": limit},
+                    )
+                    for index, fact in enumerate((result.facts or [])[:8], start=1)
+                ]
+                if not sources:
+                    sources.append(
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="graph_summary",
+                            query=query,
+                            title="Quick search summary",
+                            snippet=self._preview(result.to_text(), 500),
+                            extra={"tool": tool_name, "total_count": result.total_count},
+                        )
+                    )
+                return ToolExecutionResult(text=result.to_text(), sources=sources)
             
             elif tool_name == "interview_agents":
-                # Deep interview - call real OASIS interview API to get simulation Agent responses (dual platform)
                 interview_topic = parameters.get("interview_topic", parameters.get("query", ""))
                 max_agents = parameters.get("max_agents", 5)
                 if isinstance(max_agents, str):
@@ -1045,18 +1415,143 @@ class ReportAgent:
                     simulation_requirement=self.simulation_requirement,
                     max_agents=max_agents
                 )
-                return result.to_text()
+                sources = [
+                    self._make_source_entry(
+                        provider="simulation_agents",
+                        source_type="agent_interview",
+                        query=interview_topic,
+                        title=interview.agent_name,
+                        snippet=self._preview(interview.response or (interview.key_quotes[0] if interview.key_quotes else ""), 400),
+                        extra={
+                            "tool": tool_name,
+                            "agent_role": interview.agent_role,
+                            "question": interview.question,
+                            "key_quotes": interview.key_quotes[:3],
+                        },
+                    )
+                    for interview in (result.interviews or [])[:6]
+                ]
+                if not sources:
+                    sources.append(
+                        self._make_source_entry(
+                            provider="simulation_agents",
+                            source_type="agent_interview_summary",
+                            query=interview_topic,
+                            title="Interview summary",
+                            snippet=self._preview(result.summary or result.selection_reasoning, 400),
+                            extra={"tool": tool_name, "interviewed_count": result.interviewed_count},
+                        )
+                    )
+                return ToolExecutionResult(text=result.to_text(), sources=sources)
+
+            elif tool_name == "live_news_brief":
+                query = parameters.get("query", "") or report_context or self.simulation_requirement
+                max_items = parameters.get("max_items", Config.LIVE_NEWS_MAX_ITEMS)
+                if isinstance(max_items, str):
+                    max_items = int(max_items)
+                result = self.live_evidence.live_news_brief(
+                    query=query,
+                    max_items=max_items,
+                )
+                sources = [
+                    self._make_source_entry(
+                        provider=result.provider,
+                        source_type="live_news",
+                        query=query,
+                        title=item.title,
+                        url=item.link,
+                        snippet=item.title,
+                        published_at=item.published_at,
+                        extra={"tool": tool_name, "source": item.source},
+                    )
+                    for item in (result.items or [])
+                ]
+                return ToolExecutionResult(
+                    text=result.to_text(),
+                    sources=sources,
+                    warnings=list(result.warnings or []),
+                )
+
+            elif tool_name == "live_market_snapshot":
+                query = parameters.get("query", "") or report_context or self.simulation_requirement
+                context = parameters.get("context", "") or report_context
+                max_symbols = parameters.get("max_symbols", 5)
+                if isinstance(max_symbols, str):
+                    max_symbols = int(max_symbols)
+                result = self.live_evidence.live_market_snapshot(
+                    query=query,
+                    context=context,
+                    max_symbols=max_symbols,
+                )
+                sources = [
+                    self._make_source_entry(
+                        provider="twelve_data",
+                        source_type="market_quote",
+                        query=query,
+                        title=f"{quote.get('name', quote.get('symbol', 'Unknown'))} ({quote.get('symbol', 'N/A')})",
+                        snippet=self._preview(
+                            f"Price {quote.get('price', 'N/A')} {quote.get('currency', 'USD')} on {quote.get('exchange', 'N/A')}; "
+                            f"change {quote.get('change', 'N/A')} / {quote.get('percent_change', 'N/A')}%",
+                            300,
+                        ),
+                        last_updated=result.fetched_at,
+                        extra={"tool": tool_name, **quote},
+                    )
+                    for quote in (result.quotes or [])
+                ]
+                return ToolExecutionResult(
+                    text=result.to_text(),
+                    sources=sources,
+                    warnings=list(result.warnings or []),
+                )
+
+            elif tool_name == "web_search":
+                query = parameters.get("query", "") or report_context or self.simulation_requirement
+                max_results = parameters.get("max_results", 5)
+                if isinstance(max_results, str):
+                    max_results = int(max_results)
+                result = self.perplexity.search(query, max_results=max_results)
+                sources = [
+                    self._make_source_entry(
+                        provider=result.provider,
+                        source_type="web_search",
+                        query=query,
+                        title=entry.title or entry.url,
+                        url=entry.url,
+                        snippet=entry.snippet,
+                        published_at=entry.published_at,
+                        last_updated=entry.last_updated,
+                        extra={"tool": tool_name},
+                    )
+                    for entry in (result.entries or [])
+                ]
+                return ToolExecutionResult(
+                    text=result.to_text(),
+                    sources=sources,
+                    warnings=list(result.warnings or []),
+                )
             
             # ========== Backward compatible old tools (internally redirected to new tools) ==========
             
             elif tool_name == "search_graph":
-                # Redirect to quick_search
                 logger.info("search_graph redirected to quick_search")
                 return self._execute_tool("quick_search", parameters, report_context)
             
             elif tool_name == "get_graph_statistics":
                 result = self.zep_tools.get_graph_statistics(self.graph_id)
-                return json.dumps(result, ensure_ascii=False, indent=2)
+                text = json.dumps(result, ensure_ascii=False, indent=2)
+                return ToolExecutionResult(
+                    text=text,
+                    sources=[
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="graph_statistics",
+                            title="Graph statistics",
+                            snippet=self._preview(text, 500),
+                            extra={"tool": tool_name, **(result or {})},
+                        )
+                    ],
+                )
             
             elif tool_name == "get_entity_summary":
                 entity_name = parameters.get("entity_name", "")
@@ -1064,10 +1559,25 @@ class ReportAgent:
                     graph_id=self.graph_id,
                     entity_name=entity_name
                 )
-                return json.dumps(result, ensure_ascii=False, indent=2)
+                text = json.dumps(result, ensure_ascii=False, indent=2)
+                return ToolExecutionResult(
+                    text=text,
+                    sources=[
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="entity_summary",
+                            query=entity_name,
+                            title=entity_name or "Entity summary",
+                            snippet=self._preview(text, 500),
+                            extra={"tool": tool_name},
+                        )
+                    ],
+                )
             
             elif tool_name == "get_simulation_context":
-                # Redirect to insight_forge, as it is more powerful
+                if self.analysis_mode != ANALYSIS_MODE_GLOBAL:
+                    message = "get_simulation_context is unavailable in quick mode."
+                    return ToolExecutionResult(text=message, warnings=[message])
                 logger.info("get_simulation_context redirected to insight_forge")
                 query = parameters.get("query", self.simulation_requirement)
                 return self._execute_tool("insight_forge", {"query": query}, report_context)
@@ -1079,17 +1589,50 @@ class ReportAgent:
                     entity_type=entity_type
                 )
                 result = [n.to_dict() for n in nodes]
-                return json.dumps(result, ensure_ascii=False, indent=2)
+                text = json.dumps(result, ensure_ascii=False, indent=2)
+                return ToolExecutionResult(
+                    text=text,
+                    sources=[
+                        self._make_source_entry(
+                            provider="zep_graph",
+                            source_type="entity_type_list",
+                            query=entity_type,
+                            title=f"Entities of type {entity_type or 'unknown'}",
+                            snippet=self._preview(text, 500),
+                            extra={"tool": tool_name, "count": len(result)},
+                        )
+                    ],
+                )
             
             else:
-                return f"Unknown tool: {tool_name}. Please use one of: insight_forge, panorama_search, quick_search"
+                message = (
+                    f"Unknown tool: {tool_name}. Please use one of: "
+                    + ", ".join(sorted(self.tools.keys()))
+                )
+                return ToolExecutionResult(text=message, warnings=[message])
                 
         except Exception as e:
             logger.error(f"Tool execution failed: {tool_name}, error: {str(e)}")
-            return f"Tool execution failed: {str(e)}"
+            return ToolExecutionResult(
+                text=f"Tool execution failed: {str(e)}",
+                warnings=[f"{tool_name} failed: {str(e)}"],
+            )
     
     # Valid tool names set, used for bare JSON fallback parsing validation
-    VALID_TOOL_NAMES = {"insight_forge", "panorama_search", "quick_search", "interview_agents"}
+    VALID_TOOL_NAMES = {
+        "insight_forge",
+        "panorama_search",
+        "quick_search",
+        "interview_agents",
+        "live_news_brief",
+        "live_market_snapshot",
+        "web_search",
+        "search_graph",
+        "get_graph_statistics",
+        "get_entity_summary",
+        "get_simulation_context",
+        "get_entities_by_type",
+    }
 
     def _parse_tool_calls(self, response: str) -> List[Dict[str, Any]]:
         """
@@ -1106,7 +1649,8 @@ class ReportAgent:
         for match in re.finditer(xml_pattern, response, re.DOTALL):
             try:
                 call_data = json.loads(match.group(1))
-                tool_calls.append(call_data)
+                if self._is_valid_tool_call(call_data):
+                    tool_calls.append(call_data)
             except json.JSONDecodeError:
                 pass
 
@@ -1142,7 +1686,8 @@ class ReportAgent:
         """Validate whether parsed JSON is a valid tool call"""
         # Support both {"name": ..., "parameters": ...} and {"tool": ..., "params": ...} key formats
         tool_name = data.get("name") or data.get("tool")
-        if tool_name and tool_name in self.VALID_TOOL_NAMES:
+        legacy_aliases = self._allowed_legacy_aliases()
+        if tool_name and (tool_name in self.tools or tool_name in legacy_aliases):
             # Normalize keys to name / parameters
             if "tool" in data:
                 data["name"] = data.pop("tool")
@@ -1160,6 +1705,235 @@ class ReportAgent:
             if params_desc:
                 desc_parts.append(f"  Parameters: {params_desc}")
         return "\n".join(desc_parts)
+
+    def _generate_prediction_summary(self, report_content: str) -> Optional[Dict[str, Any]]:
+        """Generate a structured scenario/probability summary from the report."""
+        trimmed_report = (report_content or "").strip()
+        if not trimmed_report:
+            return None
+
+        trimmed_report = trimmed_report[:18000]
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    self._build_persona_prefix()
+                    + PROBABILITY_SUMMARY_SYSTEM_PROMPT
+                    + self._build_variables_context()
+                    + self.language_instruction
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Simulation requirement:\n{self.simulation_requirement}\n\n"
+                    f"Report content:\n{trimmed_report}"
+                ),
+            },
+        ]
+
+        try:
+            response, usage = self.llm.chat_json_with_fallback(
+                messages=messages,
+                temperature=0.2,
+                max_tokens=1600,
+            )
+            self.usage.add(usage)
+            normalized = self._normalize_prediction_summary(response)
+            if normalized is not None:
+                normalized["language_used"] = self.language
+            return normalized
+        except Exception as exc:
+            logger.warning("Structured prediction summary generation failed: %s", exc)
+            return None
+
+    @staticmethod
+    def _normalize_prediction_summary(summary: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Coerce LLM output into a stable scenario summary contract."""
+        scenarios = summary.get("scenarios")
+        if not isinstance(scenarios, list) or not scenarios:
+            return None
+
+        name_map = {
+            "bull case": "Bull case",
+            "base case": "Base case",
+            "bear case": "Bear case",
+        }
+        normalized_by_name: Dict[str, Dict[str, Any]] = {}
+        ordered_labels = ["Bull case", "Base case", "Bear case"]
+        for index, item in enumerate(scenarios):
+            if not isinstance(item, dict):
+                continue
+            raw_name = str(item.get("name", "")).strip().lower()
+            canonical_name = name_map.get(raw_name)
+            if not canonical_name:
+                if "bull" in raw_name:
+                    canonical_name = "Bull case"
+                elif "bear" in raw_name:
+                    canonical_name = "Bear case"
+                else:
+                    canonical_name = ordered_labels[min(index, len(ordered_labels) - 1)]
+
+            try:
+                probability = int(round(float(item.get("probability", 0))))
+            except Exception:
+                probability = 0
+
+            normalized_by_name[canonical_name] = {
+                "name": canonical_name,
+                "probability": max(0, min(100, probability)),
+                "timeframe": str(item.get("timeframe") or summary.get("forecast_horizon") or "").strip(),
+                "summary": str(item.get("summary") or "").strip(),
+                "key_drivers": ReportAgent._normalize_string_list(item.get("key_drivers")),
+                "key_risks": ReportAgent._normalize_string_list(item.get("key_risks")),
+                "assumptions": ReportAgent._normalize_string_list(item.get("assumptions")),
+            }
+
+        ordered = []
+        for label in ordered_labels:
+            if label in normalized_by_name:
+                ordered.append(normalized_by_name[label])
+            else:
+                ordered.append({
+                    "name": label,
+                    "probability": 0,
+                    "timeframe": str(summary.get("forecast_horizon") or "").strip(),
+                    "summary": "",
+                    "key_drivers": [],
+                    "key_risks": [],
+                    "assumptions": [],
+                })
+
+        probabilities = ReportAgent._normalize_probability_values(
+            [item["probability"] for item in ordered]
+        )
+
+        for item, probability in zip(ordered, probabilities):
+            item["probability"] = max(0, min(100, int(probability)))
+
+        return {
+            "forecast_horizon": str(summary.get("forecast_horizon") or ordered[1]["timeframe"] or "").strip(),
+            "confidence_note": str(summary.get("confidence_note") or "").strip(),
+            "scenarios": ordered,
+            "caveats": ReportAgent._normalize_string_list(summary.get("caveats")),
+        }
+
+    @staticmethod
+    def _normalize_string_list(value: Any) -> List[str]:
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str) and value.strip():
+            return [value.strip()]
+        return []
+
+    @staticmethod
+    def _normalize_probability_values(values: List[int]) -> List[int]:
+        """Normalize a list of integer probabilities to a stable sum of 100."""
+        normalized_values = [max(0, int(value)) for value in values]
+        total = sum(normalized_values)
+        if total <= 0:
+            return [25, 50, 25]
+
+        exact_values = [(value / total) * 100 for value in normalized_values]
+        floored_values = [int(value) for value in exact_values]
+        remainder = 100 - sum(floored_values)
+
+        if remainder > 0:
+            ranked_indexes = sorted(
+                range(len(exact_values)),
+                key=lambda index: (exact_values[index] - floored_values[index], -index),
+                reverse=True,
+            )
+            for index in ranked_indexes[:remainder]:
+                floored_values[index] += 1
+        elif remainder < 0:
+            ranked_indexes = sorted(
+                range(len(exact_values)),
+                key=lambda index: (floored_values[index] - exact_values[index], index),
+                reverse=True,
+            )
+            for index in ranked_indexes[: abs(remainder)]:
+                if floored_values[index] > 0:
+                    floored_values[index] -= 1
+
+        return floored_values
+
+    def _build_explainability(self, report_content: str, manifest: Optional[SourceManifest]) -> Dict[str, Any]:
+        explainability = {
+            "why_this_conclusion": "",
+            "basis_summary": [],
+            "source_attribution": [],
+        }
+        trimmed_report = (report_content or "").strip()
+        if not trimmed_report:
+            return explainability
+
+        source_shortlist = []
+        source_map: Dict[str, SourceEntry] = {}
+        for source in (manifest.sources if manifest else [])[:8]:
+            source_map[source.source_id] = source
+            source_shortlist.append({
+                "source_id": source.source_id,
+                "provider": source.provider,
+                "title": source.title,
+                "url": source.url,
+                "snippet": self._preview(source.snippet, 240),
+            })
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    self._build_persona_prefix()
+                    + EXPLAINABILITY_SYSTEM_PROMPT
+                    + self._build_variables_context()
+                    + self.language_instruction
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Simulation requirement:\n{self.simulation_requirement}\n\n"
+                    f"Report content:\n{trimmed_report[:14000]}\n\n"
+                    f"Source shortlist:\n{json.dumps(source_shortlist, ensure_ascii=False, indent=2)}"
+                ),
+            },
+        ]
+
+        try:
+            response, usage = self.llm.chat_json(
+                messages=messages,
+                temperature=0.2,
+                max_tokens=1200,
+            )
+            self.usage.add(usage)
+            explainability["why_this_conclusion"] = str(response.get("why_this_conclusion") or "").strip()
+            explainability["basis_summary"] = self._normalize_string_list(response.get("basis_summary"))[:5]
+
+            source_ids = []
+            for source_id in response.get("source_ids") or []:
+                normalized = str(source_id or "").strip()
+                if normalized and normalized in source_map and normalized not in source_ids:
+                    source_ids.append(normalized)
+            if not source_ids:
+                source_ids = [source.source_id for source in (manifest.sources if manifest else [])[:3]]
+
+            explainability["source_attribution"] = [
+                {
+                    "source_id": source_map[source_id].source_id,
+                    "provider": source_map[source_id].provider,
+                    "title": source_map[source_id].title,
+                    "url": source_map[source_id].url,
+                    "snippet": self._preview(source_map[source_id].snippet, 240),
+                }
+                for source_id in source_ids
+                if source_id in source_map
+            ]
+        except Exception as exc:
+            logger.warning("Explainability generation failed for simulation_id=%s: %s", self.simulation_id, exc)
+            if manifest:
+                manifest.add_warning(f"Explainability generation failed: {exc}")
+        return explainability
     
     def plan_outline(
         self, 
@@ -1189,8 +1963,15 @@ class ReportAgent:
         
         if progress_callback:
             progress_callback("planning", 30, "Generating report outline...")
-        
-        system_prompt = self._build_persona_prefix() + PLAN_SYSTEM_PROMPT + self._build_variables_context() + self.language_instruction
+
+        min_sections, max_sections = self._outline_section_bounds()
+        mode_prompt = (
+            "\n[Analysis Mode]\n"
+            f"- Current analysis mode: {self.analysis_mode}\n"
+            f"- Section count must stay between {min_sections} and {max_sections}\n"
+            + ("- Favor fast synthesis and keep the outline compact.\n" if self.analysis_mode == ANALYSIS_MODE_QUICK else "- Use the full report structure when it materially improves coverage.\n")
+        )
+        system_prompt = self._build_persona_prefix() + PLAN_SYSTEM_PROMPT + mode_prompt + self._build_variables_context() + self.language_instruction
         user_prompt = PLAN_USER_PROMPT_TEMPLATE.format(
             simulation_requirement=self.simulation_requirement,
             total_nodes=context.get('graph_statistics', {}).get('total_nodes', 0),
@@ -1198,6 +1979,8 @@ class ReportAgent:
             entity_types=list(context.get('graph_statistics', {}).get('entity_types', {}).keys()),
             total_entities=context.get('total_entities', 0),
             related_facts_json=json.dumps(context.get('related_facts', [])[:10], ensure_ascii=False, indent=2),
+        ) + (
+            f"\n\n[Mode-specific constraint]\nKeep the outline between {min_sections} and {max_sections} sections."
         )
 
         try:
@@ -1215,11 +1998,18 @@ class ReportAgent:
             
             # Parse outline
             sections = []
-            for section_data in response.get("sections", []):
+            for section_data in response.get("sections", [])[:max_sections]:
                 sections.append(ReportSection(
                     title=section_data.get("title", ""),
                     content=""
                 ))
+            if len(sections) < min_sections:
+                fallback_sections = [
+                    "Prediction Scenarios and Core Findings",
+                    "Population Behavior Prediction Analysis",
+                    "Trend Outlook and Risk Indicators",
+                ]
+                sections = [ReportSection(title=title, content="") for title in fallback_sections[:max_sections]]
             
             outline = ReportOutline(
                 title=response.get("title", "Simulation Analysis Report"),
@@ -1286,6 +2076,8 @@ class ReportAgent:
             simulation_requirement=self.simulation_requirement,
             section_title=section.title,
             tools_description=self._get_tools_description(),
+            min_tool_calls=self.min_tool_calls_per_section,
+            max_tool_calls=self.max_tool_calls_per_section,
         )
         system_prompt = self._build_persona_prefix() + formatted_template + self._build_variables_context() + self.language_instruction
 
@@ -1312,11 +2104,11 @@ class ReportAgent:
         
         # ReACT loop
         tool_calls_count = 0
-        max_iterations = 5  # Max iteration rounds
-        min_tool_calls = 3  # Min tool call count
+        max_iterations = self.max_reflection_rounds
+        min_tool_calls = self.min_tool_calls_per_section
         conflict_retries = 0  # Consecutive conflicts where tool call and Final Answer appear simultaneously
         used_tools = set()  # Track called tool names
-        all_tools = {"insight_forge", "panorama_search", "quick_search", "interview_agents"}
+        all_tools = set(self.tools.keys())
 
         # Report context, for InsightForge sub-question generation
         report_context = f"Section title: {section.title}\nSimulation requirement: {self.simulation_requirement}"
@@ -1326,7 +2118,7 @@ class ReportAgent:
                 progress_callback(
                     "generating", 
                     int((iteration / max_iterations) * 100),
-                    f"Deep retrieval and writing ({tool_calls_count}/{self.MAX_TOOL_CALLS_PER_SECTION})"
+                    f"Deep retrieval and writing ({tool_calls_count}/{self.max_tool_calls_per_section})"
                 )
             
             # Call LLM
@@ -1435,13 +2227,13 @@ class ReportAgent:
             # -- Case 2: LLM attempted tool call --
             if has_tool_calls:
                 # Tool quota exhausted -> explicitly notify, request Final Answer output
-                if tool_calls_count >= self.MAX_TOOL_CALLS_PER_SECTION:
+                if tool_calls_count >= self.max_tool_calls_per_section:
                     messages.append({"role": "assistant", "content": response})
                     messages.append({
                         "role": "user",
                         "content": REACT_TOOL_LIMIT_MSG.format(
                             tool_calls_count=tool_calls_count,
-                            max_tool_calls=self.MAX_TOOL_CALLS_PER_SECTION,
+                            max_tool_calls=self.max_tool_calls_per_section,
                         ),
                     })
                     continue
@@ -1460,18 +2252,19 @@ class ReportAgent:
                         iteration=iteration + 1
                     )
 
-                result = self._execute_tool(
+                tool_result = self._execute_tool(
                     call["name"],
                     call.get("parameters", {}),
                     report_context=report_context
                 )
+                self._record_tool_result(tool_result)
 
                 if self.report_logger:
                     self.report_logger.log_tool_result(
                         section_title=section.title,
                         section_index=section_index,
                         tool_name=call["name"],
-                        result=result,
+                        result=tool_result.text,
                         iteration=iteration + 1
                     )
 
@@ -1481,7 +2274,7 @@ class ReportAgent:
                 # Build unused tools hint
                 unused_tools = all_tools - used_tools
                 unused_hint = ""
-                if unused_tools and tool_calls_count < self.MAX_TOOL_CALLS_PER_SECTION:
+                if unused_tools and tool_calls_count < self.max_tool_calls_per_section:
                     unused_hint = REACT_UNUSED_TOOLS_HINT.format(unused_list=", ".join(unused_tools))
 
                 messages.append({"role": "assistant", "content": response})
@@ -1489,9 +2282,9 @@ class ReportAgent:
                     "role": "user",
                     "content": REACT_OBSERVATION_TEMPLATE.format(
                         tool_name=call["name"],
-                        result=result,
+                        result=tool_result.text,
                         tool_calls_count=tool_calls_count,
-                        max_tool_calls=self.MAX_TOOL_CALLS_PER_SECTION,
+                        max_tool_calls=self.max_tool_calls_per_section,
                         used_tools_str=", ".join(used_tools),
                         unused_hint=unused_hint,
                     ),
@@ -1600,7 +2393,11 @@ class ReportAgent:
             graph_id=self.graph_id,
             simulation_requirement=self.simulation_requirement,
             status=ReportStatus.PENDING,
-            created_at=datetime.now().isoformat()
+            created_at=datetime.now().isoformat(),
+            language_used=self.language,
+            analysis_mode=self.analysis_mode,
+            source_manifest_summary={},
+            explainability={},
         )
         
         # Completed section title list (for progress tracking)
@@ -1609,13 +2406,21 @@ class ReportAgent:
         try:
             # Initialization: Create report folder and save initial state
             ReportManager._ensure_report_folder(report_id)
+            self.source_manifest = SourceManifest(
+                report_id=report_id,
+                simulation_id=self.simulation_id,
+                graph_id=self.graph_id,
+                analysis_mode=self.analysis_mode,
+                language=self.language,
+            )
             
             # Initialize logger (structured log agent_log.jsonl)
             self.report_logger = ReportLogger(report_id)
             self.report_logger.log_start(
                 simulation_id=self.simulation_id,
                 graph_id=self.graph_id,
-                simulation_requirement=self.simulation_requirement
+                simulation_requirement=self.simulation_requirement,
+                analysis_mode=self.analysis_mode,
             )
             
             # Initialize console logger (console_log.txt)
@@ -1661,6 +2466,7 @@ class ReportAgent:
             
             # Phase 2: Generate section by section (save per section)
             report.status = ReportStatus.GENERATING
+            ReportManager.save_report(report)
             
             total_sections = len(outline.sections)
             generated_sections = []  # Save content for context
@@ -1736,7 +2542,42 @@ class ReportAgent:
             )
             
             # Use ReportManager to assemble complete report
-            report.markdown_content = ReportManager.assemble_full_report(report_id, outline)
+            report.markdown_content = ReportManager.assemble_full_report(
+                report_id,
+                outline,
+                language_used=report.language_used,
+            )
+            ReportManager.update_progress(
+                report_id, "generating", 97, "Generating structured scenario outlook...",
+                completed_sections=completed_section_titles
+            )
+            if progress_callback:
+                progress_callback("generating", 97, "Generating structured scenario outlook...")
+
+            prediction_summary = self._generate_prediction_summary(report.markdown_content)
+            if prediction_summary:
+                report.prediction_summary = prediction_summary
+                report.markdown_content = ReportManager.assemble_full_report(
+                    report_id,
+                    outline,
+                    prediction_summary=prediction_summary,
+                    language_used=report.language_used,
+                )
+
+            report.explainability = self._build_explainability(report.markdown_content, self.source_manifest)
+            if self.source_manifest:
+                try:
+                    ReportManager.save_source_manifest(report.report_id, self.source_manifest)
+                    report.source_manifest_summary = self.source_manifest.summary()
+                except Exception as exc:
+                    logger.warning("Failed to persist source manifest for report_id=%s: %s", report.report_id, exc)
+                    report.source_manifest_summary = {
+                        "artifact": "",
+                        "source_count": 0,
+                        "provider_counts": {},
+                        "warnings": [f"Source manifest persistence failed: {exc}"],
+                    }
+
             report.status = ReportStatus.COMPLETED
             report.completed_at = datetime.now().isoformat()
             
@@ -1765,6 +2606,7 @@ class ReportAgent:
 
             # Store usage metadata on report
             report.usage = self.usage.to_dict()
+            ReportManager.save_report(report)
 
             # Close console logger
             if self.console_logger:
@@ -1827,7 +2669,11 @@ class ReportAgent:
         # Get generated report content
         report_content = ""
         try:
-            report = ReportManager.get_report_by_simulation(self.simulation_id)
+            report = ReportManager.get_report_by_simulation(
+                self.simulation_id,
+                language_used=self.language,
+                analysis_mode=self.analysis_mode,
+            )
             if report and report.markdown_content:
                 # Limit report length to avoid context overflow
                 report_content = report.markdown_content[:15000]
@@ -1889,7 +2735,7 @@ class ReportAgent:
                 result = self._execute_tool(call["name"], call.get("parameters", {}))
                 tool_results.append({
                     "tool": call["name"],
-                    "result": result[:1500]  # Limit result length
+                    "result": result.text[:1500]  # Limit result length
                 })
                 tool_calls_made.append(call)
             
@@ -1938,24 +2784,30 @@ class ReportManager:
     """
     
     # Report storage directory
-    REPORTS_DIR = os.path.join(Config.UPLOAD_FOLDER, 'reports')
+    REPORTS_DIR = Config.REPORTS_DIR
+
+    @classmethod
+    def _store(cls):
+        return get_artifact_store()
     
     @classmethod
     def _ensure_reports_dir(cls):
         """Ensure report root directory exists"""
-        os.makedirs(cls.REPORTS_DIR, exist_ok=True)
+        cls._store().ensure_namespace(REPORT_NAMESPACE)
     
     @classmethod
-    def _get_report_folder(cls, report_id: str) -> str:
+    def _get_report_folder(cls, report_id: str, *, ensure: bool = False, sync: bool = False) -> str:
         """Get report folder path"""
-        return os.path.join(cls.REPORTS_DIR, report_id)
+        return cls._store().get_resource_dir(REPORT_NAMESPACE, report_id, ensure=ensure, sync=sync)
     
     @classmethod
     def _ensure_report_folder(cls, report_id: str) -> str:
         """Ensure report folder exists and return path"""
-        folder = cls._get_report_folder(report_id)
-        os.makedirs(folder, exist_ok=True)
-        return folder
+        return cls._get_report_folder(report_id, ensure=True)
+
+    @classmethod
+    def flush_report(cls, report_id: str) -> str:
+        return cls._store().flush_resource(REPORT_NAMESPACE, report_id)
     
     @classmethod
     def _get_report_path(cls, report_id: str) -> str:
@@ -1976,6 +2828,15 @@ class ReportManager:
     def _get_progress_path(cls, report_id: str) -> str:
         """Get progress file path"""
         return os.path.join(cls._get_report_folder(report_id), "progress.json")
+
+    @classmethod
+    def _get_prediction_summary_path(cls, report_id: str) -> str:
+        """Get structured prediction summary path."""
+        return os.path.join(cls._get_report_folder(report_id), "prediction_summary.json")
+
+    @classmethod
+    def _get_source_manifest_path(cls, report_id: str) -> str:
+        return os.path.join(cls._get_report_folder(report_id), SourceManifest.ARTIFACT_NAME)
     
     @classmethod
     def _get_section_path(cls, report_id: str, section_index: int) -> str:
@@ -2012,6 +2873,7 @@ class ReportManager:
                 "has_more": whether there are more logs
             }
         """
+        cls._get_report_folder(report_id, sync=True)
         log_path = cls._get_console_log_path(report_id)
         
         if not os.path.exists(log_path):
@@ -2070,6 +2932,7 @@ class ReportManager:
                 "has_more": whether there are more logs
             }
         """
+        cls._get_report_folder(report_id, sync=True)
         log_path = cls._get_agent_log_path(report_id)
         
         if not os.path.exists(log_path):
@@ -2126,6 +2989,7 @@ class ReportManager:
         
         with open(cls._get_outline_path(report_id), 'w', encoding='utf-8') as f:
             json.dump(outline.to_dict(), f, ensure_ascii=False, indent=2)
+        cls.flush_report(report_id)
         
         logger.info(f"Outline saved: {report_id}")
     
@@ -2162,6 +3026,7 @@ class ReportManager:
         file_path = os.path.join(cls._get_report_folder(report_id), file_suffix)
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
+        cls.flush_report(report_id)
 
         logger.info(f"Section saved: {report_id}/{file_suffix}")
         return file_path
@@ -2262,10 +3127,12 @@ class ReportManager:
         
         with open(cls._get_progress_path(report_id), 'w', encoding='utf-8') as f:
             json.dump(progress_data, f, ensure_ascii=False, indent=2)
+        cls.flush_report(report_id)
     
     @classmethod
     def get_progress(cls, report_id: str) -> Optional[Dict[str, Any]]:
         """Get report generation progress"""
+        cls._get_report_folder(report_id, sync=True)
         path = cls._get_progress_path(report_id)
         
         if not os.path.exists(path):
@@ -2281,7 +3148,7 @@ class ReportManager:
         
         Return all saved section file info
         """
-        folder = cls._get_report_folder(report_id)
+        folder = cls._get_report_folder(report_id, ensure=True, sync=True)
         
         if not os.path.exists(folder):
             return []
@@ -2304,19 +3171,292 @@ class ReportManager:
                 })
 
         return sections
-    
+
     @classmethod
-    def assemble_full_report(cls, report_id: str, outline: ReportOutline) -> str:
+    def save_prediction_summary(cls, report_id: str, prediction_summary: Dict[str, Any]) -> None:
+        """Persist structured prediction summary to a standalone JSON artifact."""
+        cls._ensure_report_folder(report_id)
+        with open(cls._get_prediction_summary_path(report_id), 'w', encoding='utf-8') as f:
+            json.dump(prediction_summary, f, ensure_ascii=False, indent=2)
+        cls.flush_report(report_id)
+
+    @classmethod
+    def save_source_manifest(cls, report_id: str, manifest: SourceManifest) -> None:
+        cls._ensure_report_folder(report_id)
+        with open(cls._get_source_manifest_path(report_id), 'w', encoding='utf-8') as f:
+            json.dump(manifest.to_dict(), f, ensure_ascii=False, indent=2)
+        cls.flush_report(report_id)
+
+    @classmethod
+    def get_source_manifest(cls, report_id: str) -> Optional[SourceManifest]:
+        cls._get_report_folder(report_id, sync=True)
+        path = cls._get_source_manifest_path(report_id)
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return SourceManifest.from_dict(json.load(f))
+        except Exception as exc:
+            logger.warning("Failed to read source manifest for report_id=%s: %s", report_id, exc)
+            return None
+
+    @classmethod
+    def _prediction_summary_terms(cls, language_used: str) -> Dict[str, str]:
+        translations = {
+            "en": {
+                "scenario_outlook": "Scenario Outlook",
+                "forecast_horizon": "Forecast horizon",
+                "timeframe": "Timeframe",
+                "summary": "Summary",
+                "drivers": "Drivers",
+                "risks": "Risks",
+                "assumptions": "Assumptions",
+                "confidence_note": "Confidence note",
+                "caveats": "Caveats",
+                "bull_case": "Bull case",
+                "base_case": "Base case",
+                "bear_case": "Bear case",
+            },
+            "ru": {
+                "scenario_outlook": "Сценарный прогноз",
+                "forecast_horizon": "Горизонт прогноза",
+                "timeframe": "Период",
+                "summary": "Краткий вывод",
+                "drivers": "Драйверы",
+                "risks": "Риски",
+                "assumptions": "Допущения",
+                "confidence_note": "Комментарий по уверенности",
+                "caveats": "Ограничения",
+                "bull_case": "Бычий сценарий",
+                "base_case": "Базовый сценарий",
+                "bear_case": "Медвежий сценарий",
+            },
+            "he": {
+                "scenario_outlook": "תחזית תרחישים",
+                "forecast_horizon": "אופק התחזית",
+                "timeframe": "טווח זמן",
+                "summary": "סיכום",
+                "drivers": "מניעים",
+                "risks": "סיכונים",
+                "assumptions": "הנחות",
+                "confidence_note": "הערת ביטחון",
+                "caveats": "הסתייגויות",
+                "bull_case": "תרחיש שורי",
+                "base_case": "תרחיש בסיס",
+                "bear_case": "תרחיש דובי",
+            },
+            "es": {
+                "scenario_outlook": "Panorama de escenarios",
+                "forecast_horizon": "Horizonte de pronóstico",
+                "timeframe": "Plazo",
+                "summary": "Resumen",
+                "drivers": "Impulsores",
+                "risks": "Riesgos",
+                "assumptions": "Supuestos",
+                "confidence_note": "Nota de confianza",
+                "caveats": "Limitaciones",
+                "bull_case": "Escenario alcista",
+                "base_case": "Escenario base",
+                "bear_case": "Escenario bajista",
+            },
+            "de": {
+                "scenario_outlook": "Szenarioausblick",
+                "forecast_horizon": "Prognosehorizont",
+                "timeframe": "Zeitraum",
+                "summary": "Zusammenfassung",
+                "drivers": "Treiber",
+                "risks": "Risiken",
+                "assumptions": "Annahmen",
+                "confidence_note": "Hinweis zur Sicherheit",
+                "caveats": "Einschränkungen",
+                "bull_case": "Bullishes Szenario",
+                "base_case": "Basisszenario",
+                "bear_case": "Bärisches Szenario",
+            },
+            "fr": {
+                "scenario_outlook": "Perspective des scénarios",
+                "forecast_horizon": "Horizon de prévision",
+                "timeframe": "Horizon temporel",
+                "summary": "Résumé",
+                "drivers": "Facteurs moteurs",
+                "risks": "Risques",
+                "assumptions": "Hypothèses",
+                "confidence_note": "Note de confiance",
+                "caveats": "Limites",
+                "bull_case": "Scénario haussier",
+                "base_case": "Scénario central",
+                "bear_case": "Scénario baissier",
+            },
+            "it": {
+                "scenario_outlook": "Quadro degli scenari",
+                "forecast_horizon": "Orizzonte di previsione",
+                "timeframe": "Orizzonte temporale",
+                "summary": "Sintesi",
+                "drivers": "Driver",
+                "risks": "Rischi",
+                "assumptions": "Assunzioni",
+                "confidence_note": "Nota di confidenza",
+                "caveats": "Limiti",
+                "bull_case": "Scenario rialzista",
+                "base_case": "Scenario base",
+                "bear_case": "Scenario ribassista",
+            },
+            "pt": {
+                "scenario_outlook": "Panorama de cenários",
+                "forecast_horizon": "Horizonte de previsão",
+                "timeframe": "Horizonte",
+                "summary": "Resumo",
+                "drivers": "Vetores",
+                "risks": "Riscos",
+                "assumptions": "Premissas",
+                "confidence_note": "Nota de confiança",
+                "caveats": "Limitações",
+                "bull_case": "Cenário de alta",
+                "base_case": "Cenário base",
+                "bear_case": "Cenário de baixa",
+            },
+            "pl": {
+                "scenario_outlook": "Przegląd scenariuszy",
+                "forecast_horizon": "Horyzont prognozy",
+                "timeframe": "Horyzont czasowy",
+                "summary": "Podsumowanie",
+                "drivers": "Czynniki napędzające",
+                "risks": "Ryzyka",
+                "assumptions": "Założenia",
+                "confidence_note": "Uwagi o pewności",
+                "caveats": "Ograniczenia",
+                "bull_case": "Scenariusz wzrostowy",
+                "base_case": "Scenariusz bazowy",
+                "bear_case": "Scenariusz spadkowy",
+            },
+            "nl": {
+                "scenario_outlook": "Scenario-overzicht",
+                "forecast_horizon": "Prognosehorizon",
+                "timeframe": "Tijdshorizon",
+                "summary": "Samenvatting",
+                "drivers": "Drijvers",
+                "risks": "Risico's",
+                "assumptions": "Aannames",
+                "confidence_note": "Betrouwbaarheidsnotitie",
+                "caveats": "Beperkingen",
+                "bull_case": "Bullish scenario",
+                "base_case": "Basisscenario",
+                "bear_case": "Bearish scenario",
+            },
+            "tr": {
+                "scenario_outlook": "Senaryo görünümü",
+                "forecast_horizon": "Tahmin ufku",
+                "timeframe": "Zaman dilimi",
+                "summary": "Özet",
+                "drivers": "Sürücüler",
+                "risks": "Riskler",
+                "assumptions": "Varsayımlar",
+                "confidence_note": "Güven notu",
+                "caveats": "Sınırlamalar",
+                "bull_case": "Yükseliş senaryosu",
+                "base_case": "Temel senaryo",
+                "bear_case": "Düşüş senaryosu",
+            },
+            "ar": {
+                "scenario_outlook": "آفاق السيناريوهات",
+                "forecast_horizon": "أفق التوقع",
+                "timeframe": "الإطار الزمني",
+                "summary": "الملخص",
+                "drivers": "العوامل الدافعة",
+                "risks": "المخاطر",
+                "assumptions": "الافتراضات",
+                "confidence_note": "ملاحظة الثقة",
+                "caveats": "القيود",
+                "bull_case": "السيناريو الصاعد",
+                "base_case": "السيناريو الأساسي",
+                "bear_case": "السيناريو الهابط",
+            },
+        }
+        return translations.get(language_used or "en", translations["en"])
+
+    @classmethod
+    def _localize_scenario_name(cls, name: str, language_used: str) -> str:
+        terms = cls._prediction_summary_terms(language_used)
+        normalized = (name or "").strip().lower()
+        if normalized == "bull case":
+            return terms["bull_case"]
+        if normalized == "base case":
+            return terms["base_case"]
+        if normalized == "bear case":
+            return terms["bear_case"]
+        return name or terms["base_case"]
+
+    @classmethod
+    def _format_prediction_summary_markdown(cls, prediction_summary: Dict[str, Any], language_used: str = "en") -> str:
+        """Render structured probabilities as a human-readable markdown block."""
+        scenarios = prediction_summary.get("scenarios") or []
+        if not scenarios:
+            return ""
+        terms = cls._prediction_summary_terms(language_used)
+
+        lines = [f"## {terms['scenario_outlook']}", ""]
+        forecast_horizon = prediction_summary.get("forecast_horizon")
+        if forecast_horizon:
+            lines.append(f"**{terms['forecast_horizon']}:** {forecast_horizon}")
+            lines.append("")
+
+        for scenario in scenarios:
+            name = cls._localize_scenario_name(scenario.get("name", "Scenario"), language_used)
+            probability = scenario.get("probability", 0)
+            timeframe = scenario.get("timeframe", "")
+            summary = scenario.get("summary", "")
+            lines.append(f"**{name} ({probability}%)**")
+            if timeframe:
+                lines.append(f"- {terms['timeframe']}: {timeframe}")
+            if summary:
+                lines.append(f"- {terms['summary']}: {summary}")
+            drivers = scenario.get("key_drivers") or []
+            if drivers:
+                lines.append(f"- {terms['drivers']}:")
+                lines.extend(f"  - {driver}" for driver in drivers)
+            risks = scenario.get("key_risks") or []
+            if risks:
+                lines.append(f"- {terms['risks']}:")
+                lines.extend(f"  - {risk}" for risk in risks)
+            assumptions = scenario.get("assumptions") or []
+            if assumptions:
+                lines.append(f"- {terms['assumptions']}:")
+                lines.extend(f"  - {assumption}" for assumption in assumptions)
+            lines.append("")
+
+        confidence_note = prediction_summary.get("confidence_note")
+        if confidence_note:
+            lines.append(f"**{terms['confidence_note']}:** {confidence_note}")
+            lines.append("")
+
+        caveats = prediction_summary.get("caveats") or []
+        if caveats:
+            lines.append(f"**{terms['caveats']}**")
+            lines.extend(f"- {caveat}" for caveat in caveats)
+            lines.append("")
+
+        return "\n".join(lines).rstrip() + "\n\n"
+
+    @classmethod
+    def assemble_full_report(
+        cls,
+        report_id: str,
+        outline: ReportOutline,
+        prediction_summary: Optional[Dict[str, Any]] = None,
+        language_used: str = "en",
+    ) -> str:
         """
         Assemble complete report
         
         Assemble complete report from saved section files and clean headings
         """
-        folder = cls._get_report_folder(report_id)
+        folder = cls._get_report_folder(report_id, ensure=True, sync=True)
         
         # Build report header
         md_content = f"# {outline.title}\n\n"
         md_content += f"> {outline.summary}\n\n"
+        if prediction_summary:
+            md_content += cls._format_prediction_summary_markdown(prediction_summary, language_used)
         md_content += f"---\n\n"
         
         # Read all section files in order
@@ -2325,18 +3465,19 @@ class ReportManager:
             md_content += section_info["content"]
         
         # Post-process: clean heading issues in entire report
-        md_content = cls._post_process_report(md_content, outline)
+        md_content = cls._post_process_report(md_content, outline, language_used=language_used)
         
         # Save complete report
-        full_path = cls._get_report_markdown_path(report_id)
+        full_path = os.path.join(folder, "full_report.md")
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
+        cls.flush_report(report_id)
         
         logger.info(f"Complete report assembled: {report_id}")
         return md_content
     
     @classmethod
-    def _post_process_report(cls, content: str, outline: ReportOutline) -> str:
+    def _post_process_report(cls, content: str, outline: ReportOutline, language_used: str = "en") -> str:
         """
         Post-process report content
         
@@ -2361,6 +3502,7 @@ class ReportManager:
         section_titles = set()
         for section in outline.sections:
             section_titles.add(section.title)
+        allowed_level_two_headings = {cls._prediction_summary_terms(language_used)["scenario_outlook"]}
         
         i = 0
         while i < len(lines):
@@ -2412,7 +3554,7 @@ class ReportManager:
                         processed_lines.append("")
                         prev_was_heading = False
                 elif level == 2:
-                    if title in section_titles or title == outline.title:
+                    if title in section_titles or title == outline.title or title in allowed_level_two_headings:
                         # Keep section title
                         processed_lines.append(line)
                         prev_was_heading = True
@@ -2473,17 +3615,37 @@ class ReportManager:
         # Save outline
         if report.outline:
             cls.save_outline(report.report_id, report.outline)
+
+        if report.prediction_summary:
+            cls.save_prediction_summary(report.report_id, report.prediction_summary)
+            try:
+                PredictionLedgerManager.sync_report_prediction_summary(
+                    report_id=report.report_id,
+                    simulation_id=report.simulation_id,
+                    graph_id=report.graph_id,
+                    prediction_summary=report.prediction_summary,
+                    created_at=report.created_at,
+                    completed_at=report.completed_at,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Prediction ledger sync failed for report_id=%s: %s",
+                    report.report_id,
+                    exc,
+                )
         
         # Save complete Markdown report
         if report.markdown_content:
             with open(cls._get_report_markdown_path(report.report_id), 'w', encoding='utf-8') as f:
                 f.write(report.markdown_content)
+        cls.flush_report(report.report_id)
         
         logger.info(f"Report saved: {report.report_id}")
     
     @classmethod
     def get_report(cls, report_id: str) -> Optional[Report]:
         """Get report"""
+        cls._get_report_folder(report_id, sync=True)
         path = cls._get_report_path(report_id)
         
         if not os.path.exists(path):
@@ -2520,7 +3682,18 @@ class ReportManager:
             if os.path.exists(full_report_path):
                 with open(full_report_path, 'r', encoding='utf-8') as f:
                     markdown_content = f.read()
+
+        prediction_summary = data.get('prediction_summary')
+        if not prediction_summary:
+            prediction_summary_path = cls._get_prediction_summary_path(report_id)
+            if os.path.exists(prediction_summary_path):
+                with open(prediction_summary_path, 'r', encoding='utf-8') as f:
+                    prediction_summary = json.load(f)
+        if not prediction_summary:
+            prediction_summary = PredictionLedgerManager.get_prediction_summary(report_id)
         
+        source_manifest = cls.get_source_manifest(report_id)
+
         return Report(
             report_id=data['report_id'],
             simulation_id=data['simulation_id'],
@@ -2532,27 +3705,35 @@ class ReportManager:
             created_at=data.get('created_at', ''),
             completed_at=data.get('completed_at', ''),
             error=data.get('error')
+            ,
+            usage=data.get('usage'),
+            prediction_summary=prediction_summary,
+            language_used=data.get('language_used', 'en'),
+            analysis_mode=normalize_analysis_mode(data.get('analysis_mode')),
+            source_manifest_summary=data.get('source_manifest_summary') or (source_manifest.summary() if source_manifest else {}),
+            explainability=data.get('explainability') or {},
         )
     
     @classmethod
-    def get_report_by_simulation(cls, simulation_id: str) -> Optional[Report]:
+    def get_report_by_simulation(
+        cls,
+        simulation_id: str,
+        *,
+        language_used: Optional[str] = None,
+        analysis_mode: Optional[str] = None,
+        statuses: Optional[List[ReportStatus]] = None,
+    ) -> Optional[Report]:
         """Get report by simulation ID"""
-        cls._ensure_reports_dir()
-        
-        for item in os.listdir(cls.REPORTS_DIR):
-            item_path = os.path.join(cls.REPORTS_DIR, item)
-            # New format: folder
-            if os.path.isdir(item_path):
-                report = cls.get_report(item)
-                if report and report.simulation_id == simulation_id:
-                    return report
-            # Backward compatible: JSON file
-            elif item.endswith('.json'):
-                report_id = item[:-5]
-                report = cls.get_report(report_id)
-                if report and report.simulation_id == simulation_id:
-                    return report
-        
+        requested_mode = normalize_analysis_mode(analysis_mode) if analysis_mode is not None else None
+        allowed_statuses = {status.value if isinstance(status, ReportStatus) else str(status) for status in (statuses or [])}
+        for report in cls.list_reports(simulation_id=simulation_id, limit=200):
+            if language_used is not None and getattr(report, "language_used", "en") != language_used:
+                continue
+            if requested_mode is not None and normalize_analysis_mode(getattr(report, "analysis_mode", ANALYSIS_MODE_GLOBAL)) != requested_mode:
+                continue
+            if allowed_statuses and report.status.value not in allowed_statuses:
+                continue
+            return report
         return None
     
     @classmethod
@@ -2561,21 +3742,10 @@ class ReportManager:
         cls._ensure_reports_dir()
         
         reports = []
-        for item in os.listdir(cls.REPORTS_DIR):
-            item_path = os.path.join(cls.REPORTS_DIR, item)
-            # New format: folder
-            if os.path.isdir(item_path):
-                report = cls.get_report(item)
-                if report:
-                    if simulation_id is None or report.simulation_id == simulation_id:
-                        reports.append(report)
-            # Backward compatible: JSON file
-            elif item.endswith('.json'):
-                report_id = item[:-5]
-                report = cls.get_report(report_id)
-                if report:
-                    if simulation_id is None or report.simulation_id == simulation_id:
-                        reports.append(report)
+        for report_id in cls._store().list_resource_ids(REPORT_NAMESPACE):
+            report = cls.get_report(report_id)
+            if report and (simulation_id is None or report.simulation_id == simulation_id):
+                reports.append(report)
         
         # Sort by creation time descending
         reports.sort(key=lambda r: r.created_at, reverse=True)
@@ -2585,26 +3755,7 @@ class ReportManager:
     @classmethod
     def delete_report(cls, report_id: str) -> bool:
         """Delete report (entire folder)"""
-        import shutil
-        
-        folder_path = cls._get_report_folder(report_id)
-        
-        # New format: delete entire folder
-        if os.path.exists(folder_path) and os.path.isdir(folder_path):
-            shutil.rmtree(folder_path)
+        deleted = cls._store().delete_resource(REPORT_NAMESPACE, report_id)
+        if deleted:
             logger.info(f"Report folder deleted: {report_id}")
-            return True
-        
-        # Backward compatible: delete individual files
-        deleted = False
-        old_json_path = os.path.join(cls.REPORTS_DIR, f"{report_id}.json")
-        old_md_path = os.path.join(cls.REPORTS_DIR, f"{report_id}.md")
-        
-        if os.path.exists(old_json_path):
-            os.remove(old_json_path)
-            deleted = True
-        if os.path.exists(old_md_path):
-            os.remove(old_md_path)
-            deleted = True
-        
         return deleted

@@ -1506,12 +1506,10 @@ Return the sub-question list in JSON format."""
         """Load simulation Agent persona files"""
         import os
         import csv
+        from .simulation_manager import SimulationManager
         
-        # Build persona file path
-        sim_dir = os.path.join(
-            os.path.dirname(__file__), 
-            f'../../uploads/simulations/{simulation_id}'
-        )
+        manager = SimulationManager()
+        sim_dir = manager._get_simulation_dir(simulation_id, sync=True)
         
         profiles = []
         

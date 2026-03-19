@@ -125,6 +125,7 @@ export function logout() {
   state.token = null
   state.user = null
   state.error = null
+  billingStatus.value = null
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
 }

@@ -2,7 +2,7 @@ import service, { requestWithRetry } from './index'
 
 /**
  * Start report generation
- * @param {Object} data - { simulation_id, force_regenerate? }
+ * @param {Object} data - { simulation_id, force_regenerate?, analysis_mode?, language?, custom_persona?, report_variables? }
  */
 export const generateReport = (data) => {
   return requestWithRetry(() => service.post('/api/report/generate', data), 3, 1000)
@@ -13,7 +13,7 @@ export const generateReport = (data) => {
  * @param {string} reportId
  */
 export const getReportStatus = (reportId) => {
-  return service.get(`/api/report/generate/status`, { params: { report_id: reportId } })
+  return service.get(`/api/report/${reportId}/progress`)
 }
 
 /**
@@ -40,6 +40,14 @@ export const getConsoleLog = (reportId, fromLine = 0) => {
  */
 export const getReport = (reportId) => {
   return service.get(`/api/report/${reportId}`)
+}
+
+export const getHistoricalBacktestMetrics = (params = {}) => {
+  return service.get('/api/report/backtest/metrics', { params })
+}
+
+export const evaluateHistoricalBacktestBatch = (data) => {
+  return service.post('/api/report/backtest/evaluate-batch', data)
 }
 
 /**

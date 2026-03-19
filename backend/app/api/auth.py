@@ -22,6 +22,7 @@ from . import auth_bp
 from ..models.user import (
     get_user_by_email, get_user_by_id, create_user,
     create_magic_link, verify_magic_link, seed_demo,
+    get_user_billing_status, update_last_login,
 )
 from ..services.email_service import send_magic_link_email
 from ..utils.logger import get_logger
@@ -34,6 +35,17 @@ if not JWT_SECRET or JWT_SECRET in ('agenikpredict-jwt-secret', 'agenikpredict-s
     JWT_SECRET = _generated_secret
     logger.warning("JWT_SECRET not set — using auto-generated secret (tokens will invalidate on restart)")
 JWT_TTL = 60 * 60 * 24 * 7  # 7 days
+
+
+def _serialize_user(user: dict) -> dict:
+    """Normalize user payload for frontend auth state."""
+    return {
+        "id": user['id'],
+        "email": user['email'],
+        "name": user.get('name', ''),
+        "role": user.get('role', 'user'),
+        "plan": user.get('plan', 'explorer'),
+    }
 
 
 # ── Minimal JWT (no dependency needed) ──
@@ -151,8 +163,12 @@ def request_magic_link():
     # Find or create user
     user = get_user_by_email(email)
     if not user:
-        user = create_user(email)
+        user_id = create_user(email)
+        user = get_user_by_id(user_id)
         logger.info(f"New user registered: {email}")
+
+    if not user:
+        return jsonify({"success": False, "error": "Failed to initialize user account"}), 500
 
     # Create magic link
     token = create_magic_link(user['id'])
@@ -179,9 +195,15 @@ def verify_token():
     if not token:
         return jsonify({"success": False, "error": "Token is required"}), 400
 
-    user = verify_magic_link(token)
-    if not user:
+    user_id = verify_magic_link(token)
+    if not user_id:
         return jsonify({"success": False, "error": "Invalid or expired link. Please request a new one."}), 401
+
+    user = get_user_by_id(user_id)
+    if not user:
+        return jsonify({"success": False, "error": "User not found"}), 404
+
+    update_last_login(user_id)
 
     jwt_token = create_jwt(
         user['id'], user['email'], user['role'], user['plan'],
@@ -190,13 +212,7 @@ def verify_token():
     return jsonify({
         "success": True,
         "token": jwt_token,
-        "user": {
-            "id": user['id'],
-            "email": user['email'],
-            "name": user['name'],
-            "role": user['role'],
-            "plan": user['plan'],
-        },
+        "user": _serialize_user(user),
     })
 
 
@@ -211,14 +227,20 @@ def get_current_user():
     return jsonify({
         "success": True,
         "user": {
-            "id": user['id'],
-            "email": user['email'],
-            "name": user['name'],
-            "role": user['role'],
-            "plan": user['plan'],
+            **_serialize_user(user),
             "created_at": user['created_at'],
             "last_login_at": user['last_login_at'],
         },
+    })
+
+
+@auth_bp.route('/billing-status', methods=['GET'])
+@require_auth
+def billing_status():
+    """Compatibility endpoint for older frontend builds."""
+    return jsonify({
+        "success": True,
+        "data": get_user_billing_status(g.user_id),
     })
 
 
@@ -235,11 +257,5 @@ def demo_login():
     return jsonify({
         "success": True,
         "token": jwt_token,
-        "user": {
-            "id": user['id'],
-            "email": user['email'],
-            "name": user['name'],
-            "role": user['role'],
-            "plan": user['plan'],
-        },
+        "user": _serialize_user(user),
     })

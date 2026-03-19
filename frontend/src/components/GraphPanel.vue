@@ -50,7 +50,7 @@
       <!-- Node/edge detail panel -->
       <div v-if="selectedItem" class="detail-panel">
         <div class="detail-panel-header">
-          <span class="detail-title">{{ selectedItem.type === 'node' ? 'Node Details' : 'Relationship' }}</span>
+          <span class="detail-title">{{ selectedItem.type === 'node' ? $t('graph.detailNode') : $t('graph.detailRelationship') }}</span>
           <span v-if="selectedItem.type === 'node'" class="detail-type-badge" :style="{ background: selectedItem.color, color: '#fff' }">
             {{ selectedItem.entityType }}
           </span>
@@ -60,38 +60,38 @@
         <!-- Node details -->
         <div v-if="selectedItem.type === 'node'" class="detail-content">
           <div class="detail-row">
-            <span class="detail-label">Name:</span>
+            <span class="detail-label">{{ $t('graph.fieldName') }}:</span>
             <span class="detail-value">{{ selectedItem.data.name }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">UUID:</span>
+            <span class="detail-label">{{ $t('graph.fieldUuid') }}:</span>
             <span class="detail-value uuid-text">{{ selectedItem.data.uuid }}</span>
           </div>
           <div class="detail-row" v-if="selectedItem.data.created_at">
-            <span class="detail-label">Created:</span>
+            <span class="detail-label">{{ $t('graph.fieldCreated') }}:</span>
             <span class="detail-value">{{ formatDateTime(selectedItem.data.created_at) }}</span>
           </div>
 
           <!-- Properties -->
           <div class="detail-section" v-if="selectedItem.data.attributes && Object.keys(selectedItem.data.attributes).length > 0">
-            <div class="section-title">Properties:</div>
+            <div class="section-title">{{ $t('graph.properties') }}:</div>
             <div class="properties-list">
               <div v-for="(value, key) in selectedItem.data.attributes" :key="key" class="property-item">
                 <span class="property-key">{{ key }}:</span>
-                <span class="property-value">{{ value || 'None' }}</span>
+                <span class="property-value">{{ value || $t('graph.noneValue') }}</span>
               </div>
             </div>
           </div>
 
           <!-- Summary -->
           <div class="detail-section" v-if="selectedItem.data.summary">
-            <div class="section-title">Summary:</div>
+            <div class="section-title">{{ $t('graph.summary') }}:</div>
             <div class="summary-text">{{ selectedItem.data.summary }}</div>
           </div>
 
           <!-- Labels -->
           <div class="detail-section" v-if="selectedItem.data.labels && selectedItem.data.labels.length > 0">
-            <div class="section-title">Labels:</div>
+            <div class="section-title">{{ $t('graph.labels') }}:</div>
             <div class="labels-list">
               <span v-for="label in selectedItem.data.labels" :key="label" class="label-tag">
                 {{ label }}
@@ -105,8 +105,8 @@
           <!-- Self-loop group details -->
           <template v-if="selectedItem.data.isSelfLoopGroup">
             <div class="edge-relation-header self-loop-header">
-              {{ selectedItem.data.source_name }} - Self Relations
-              <span class="self-loop-count">{{ selectedItem.data.selfLoopCount }} items</span>
+              {{ selectedItem.data.source_name }} - {{ $t('graph.selfRelations') }}
+              <span class="self-loop-count">{{ $t('graph.itemsCount', { count: selectedItem.data.selfLoopCount }) }}</span>
             </div>
 
             <div class="self-loop-list">
@@ -121,29 +121,29 @@
                   @click="toggleSelfLoop(loop.uuid || idx)"
                 >
                   <span class="self-loop-index">#{{ idx + 1 }}</span>
-                  <span class="self-loop-name">{{ loop.name || loop.fact_type || 'RELATED' }}</span>
+                  <span class="self-loop-name">{{ loop.name || loop.fact_type || $t('graph.related') }}</span>
                   <span class="self-loop-toggle">{{ expandedSelfLoops.has(loop.uuid || idx) ? '−' : '+' }}</span>
                 </div>
 
                 <div class="self-loop-item-content" v-show="expandedSelfLoops.has(loop.uuid || idx)">
                   <div class="detail-row" v-if="loop.uuid">
-                    <span class="detail-label">UUID:</span>
+                    <span class="detail-label">{{ $t('graph.fieldUuid') }}:</span>
                     <span class="detail-value uuid-text">{{ loop.uuid }}</span>
                   </div>
                   <div class="detail-row" v-if="loop.fact">
-                    <span class="detail-label">Fact:</span>
+                    <span class="detail-label">{{ $t('graph.fieldFact') }}:</span>
                     <span class="detail-value fact-text">{{ loop.fact }}</span>
                   </div>
                   <div class="detail-row" v-if="loop.fact_type">
-                    <span class="detail-label">Type:</span>
+                    <span class="detail-label">{{ $t('graph.fieldType') }}:</span>
                     <span class="detail-value">{{ loop.fact_type }}</span>
                   </div>
                   <div class="detail-row" v-if="loop.created_at">
-                    <span class="detail-label">Created:</span>
+                    <span class="detail-label">{{ $t('graph.fieldCreated') }}:</span>
                     <span class="detail-value">{{ formatDateTime(loop.created_at) }}</span>
                   </div>
                   <div v-if="loop.episodes && loop.episodes.length > 0" class="self-loop-episodes">
-                    <span class="detail-label">Episodes:</span>
+                    <span class="detail-label">{{ $t('graph.episodes') }}:</span>
                     <div class="episodes-list compact">
                       <span v-for="ep in loop.episodes" :key="ep" class="episode-tag small">{{ ep }}</span>
                     </div>
@@ -156,29 +156,29 @@
           <!-- Normal edge details -->
           <template v-else>
             <div class="edge-relation-header">
-              {{ selectedItem.data.source_name }} → {{ selectedItem.data.name || 'RELATED_TO' }} → {{ selectedItem.data.target_name }}
+              {{ selectedItem.data.source_name }} → {{ selectedItem.data.name || $t('graph.relatedTo') }} → {{ selectedItem.data.target_name }}
             </div>
 
             <div class="detail-row">
-              <span class="detail-label">UUID:</span>
+              <span class="detail-label">{{ $t('graph.fieldUuid') }}:</span>
               <span class="detail-value uuid-text">{{ selectedItem.data.uuid }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Label:</span>
-              <span class="detail-value">{{ selectedItem.data.name || 'RELATED_TO' }}</span>
+              <span class="detail-label">{{ $t('graph.fieldLabel') }}:</span>
+              <span class="detail-value">{{ selectedItem.data.name || $t('graph.relatedTo') }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Type:</span>
-              <span class="detail-value">{{ selectedItem.data.fact_type || 'Unknown' }}</span>
+              <span class="detail-label">{{ $t('graph.fieldType') }}:</span>
+              <span class="detail-value">{{ selectedItem.data.fact_type || $t('graph.unknown') }}</span>
             </div>
             <div class="detail-row" v-if="selectedItem.data.fact">
-              <span class="detail-label">Fact:</span>
+              <span class="detail-label">{{ $t('graph.fieldFact') }}:</span>
               <span class="detail-value fact-text">{{ selectedItem.data.fact }}</span>
             </div>
 
             <!-- Episodes -->
             <div class="detail-section" v-if="selectedItem.data.episodes && selectedItem.data.episodes.length > 0">
-              <div class="section-title">Episodes:</div>
+              <div class="section-title">{{ $t('graph.episodes') }}:</div>
               <div class="episodes-list">
                 <span v-for="ep in selectedItem.data.episodes" :key="ep" class="episode-tag">
                   {{ ep }}
@@ -187,11 +187,11 @@
             </div>
 
             <div class="detail-row" v-if="selectedItem.data.created_at">
-              <span class="detail-label">Created:</span>
+              <span class="detail-label">{{ $t('graph.fieldCreated') }}:</span>
               <span class="detail-value">{{ formatDateTime(selectedItem.data.created_at) }}</span>
             </div>
             <div class="detail-row" v-if="selectedItem.data.valid_at">
-              <span class="detail-label">Valid From:</span>
+              <span class="detail-label">{{ $t('graph.fieldValidFrom') }}:</span>
               <span class="detail-value">{{ formatDateTime(selectedItem.data.valid_at) }}</span>
             </div>
           </template>
@@ -200,15 +200,23 @@
         <!-- Report Configuration Section -->
         <div class="report-config-section">
           <div class="config-section-header" @click="showReportConfig = !showReportConfig">
-            <span class="config-title">Report Settings</span>
+            <span class="config-title">{{ $t('graph.reportSettings') }}</span>
             <span class="config-toggle">{{ showReportConfig ? '\u2212' : '+' }}</span>
           </div>
 
           <div v-show="showReportConfig" class="config-content">
+            <div class="config-group">
+              <label class="config-label">{{ $t('graph.analysisMode') }}</label>
+              <select v-model="reportConfig.analysis_mode" @change="emitReportConfig" class="config-select">
+                <option value="global">{{ $t('graph.analysisModeGlobal') }}</option>
+                <option value="quick">{{ $t('graph.analysisModeQuick') }}</option>
+              </select>
+            </div>
+
             <!-- Language selector -->
             <div class="config-group">
-              <label class="config-label">Report Language</label>
-              <select v-model="reportConfig.language" @change="emitReportConfig" class="config-select">
+              <label class="config-label">{{ $t('graph.reportLanguage') }}</label>
+              <select v-model="reportConfig.language" @change="handleReportLanguageChange" class="config-select">
                 <option v-for="lang in languageOptions" :key="lang.code" :value="lang.code">
                   {{ lang.name }}
                 </option>
@@ -217,25 +225,25 @@
 
             <!-- Persona editor -->
             <div class="config-group">
-              <label class="config-label">Agent Persona</label>
+              <label class="config-label">{{ $t('graph.agentPersona') }}</label>
               <textarea
                 v-model="reportConfig.persona"
                 @blur="emitReportConfig"
                 class="config-textarea"
                 rows="3"
-                placeholder="Custom analysis perspective..."
+                :placeholder="$t('graph.personaPlaceholder')"
               ></textarea>
             </div>
 
             <!-- Variables -->
             <div class="config-group">
               <div class="config-label-row">
-                <label class="config-label">Variables</label>
-                <button class="config-add-btn" @click="addVariable">+ Add</button>
+                <label class="config-label">{{ $t('graph.variables') }}</label>
+                <button class="config-add-btn" @click="addVariable">+ {{ $t('graph.addVariable') }}</button>
               </div>
               <div v-for="(v, idx) in reportConfig.variables" :key="idx" class="variable-row">
-                <input v-model="v.key" @blur="emitReportConfig" class="var-input var-key" placeholder="Key" />
-                <input v-model="v.value" @blur="emitReportConfig" class="var-input var-value" placeholder="Value" />
+                <input v-model="v.key" @blur="emitReportConfig" class="var-input var-key" :placeholder="$t('graph.variableKey')" />
+                <input v-model="v.value" @blur="emitReportConfig" class="var-input var-value" :placeholder="$t('graph.variableValue')" />
                 <button class="var-remove-btn" @click="removeVariable(idx)">\u00D7</button>
               </div>
             </div>
@@ -258,7 +266,7 @@
 
     <!-- Legend (Bottom Left) -->
     <div v-if="graphData && entityTypes.length" class="graph-legend">
-      <span class="legend-title">Entity Types</span>
+      <span class="legend-title">{{ $t('graph.entityTypes') }}</span>
       <div class="legend-items">
         <div class="legend-item" v-for="type in entityTypes" :key="type.name">
           <span class="legend-dot" :style="{ background: type.color }"></span>
@@ -273,13 +281,14 @@
         <input type="checkbox" v-model="showEdgeLabels" />
         <span class="slider"></span>
       </label>
-      <span class="toggle-label">Show Edge Labels</span>
+      <span class="toggle-label">{{ $t('graph.showEdgeLabels') }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ForceGraph3D from '3d-force-graph'
 import SpriteText from 'three-spritetext'
 import * as THREE from 'three'
@@ -292,6 +301,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['refresh', 'toggle-maximize', 'update-report-config'])
+const { locale, t } = useI18n()
 
 const graphContainer = ref(null)
 const graphMount = ref(null)
@@ -301,11 +311,13 @@ const expandedSelfLoops = ref(new Set())
 const showSimulationFinishedHint = ref(false)
 const wasSimulating = ref(false)
 const showReportConfig = ref(false)
+const reportLanguageManuallySelected = ref(false)
 
 const reportConfig = ref({
   persona: '',
   variables: [],
-  language: localStorage.getItem('agenikpredict-locale') || 'en'
+  analysis_mode: 'global',
+  language: locale.value || localStorage.getItem('agenikpredict-locale') || 'en'
 })
 
 const languageOptions = [
@@ -340,9 +352,27 @@ const emitReportConfig = () => {
   emit('update-report-config', {
     persona: reportConfig.value.persona,
     variables: vars,
+    analysis_mode: reportConfig.value.analysis_mode || 'global',
     language: reportConfig.value.language
   })
 }
+
+const handleReportLanguageChange = () => {
+  reportLanguageManuallySelected.value = reportConfig.value.language !== locale.value
+  emitReportConfig()
+}
+
+watch(locale, (newLocale, oldLocale) => {
+  if (!newLocale) return
+  if (!reportLanguageManuallySelected.value || reportConfig.value.language === oldLocale) {
+    if (reportConfig.value.language !== newLocale) {
+      reportConfig.value.language = newLocale
+      emitReportConfig()
+    }
+    reportLanguageManuallySelected.value = false
+  }
+  nextTick(renderGraph)
+})
 
 let graphInstance = null
 let highlightNodes = new Set()
@@ -492,13 +522,12 @@ const formatDateTime = (dateStr) => {
   if (!dateStr) return ''
   try {
     const date = new Date(dateStr)
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString(locale.value || 'en', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
+      minute: '2-digit'
     })
   } catch {
     return dateStr
@@ -545,7 +574,7 @@ const renderGraph = () => {
 
   const nodes = nodesData.map(n => ({
     id: n.uuid,
-    name: n.name || 'Unnamed',
+    name: n.name || t('graph.unknown'),
     type: n.labels?.find(l => l !== 'Entity') || 'Entity',
     rawData: n
   }))
@@ -586,12 +615,12 @@ const renderGraph = () => {
       processedSelfLoopNodes.add(e.source_node_uuid)
 
       const allSelfLoops = selfLoopEdges[e.source_node_uuid]
-      const nodeName = nodeMap[e.source_node_uuid]?.name || 'Unknown'
+      const nodeName = nodeMap[e.source_node_uuid]?.name || t('graph.unknown')
 
       links.push({
         source: e.source_node_uuid,
         target: e.target_node_uuid,
-        name: `Self Relations (${allSelfLoops.length})`,
+        name: t('graph.selfRelationsCount', { count: allSelfLoops.length }),
         curvature: 0.4,
         isSelfLoop: true,
         rawData: {
@@ -622,7 +651,7 @@ const renderGraph = () => {
     links.push({
       source: e.source_node_uuid,
       target: e.target_node_uuid,
-      name: e.name || e.fact_type || 'RELATED',
+      name: e.name || e.fact_type || t('graph.related'),
       curvature,
       isSelfLoop: false,
       rawData: {

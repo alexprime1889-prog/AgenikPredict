@@ -30,6 +30,10 @@
           <span class="dot"></span>
           {{ statusText }}
         </span>
+        <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Light mode' : 'Dark mode'">
+          <svg v-if="isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
         <LanguageSwitcher />
       </div>
     </header>
@@ -45,6 +49,7 @@
           :isSimulating="isSimulating"
           @refresh="refreshGraph"
           @toggle-maximize="toggleMaximize('graph')"
+          @update-report-config="updateReportConfig"
         />
       </div>
 
@@ -57,6 +62,7 @@
           :projectData="projectData"
           :graphData="graphData"
           :systemLogs="systemLogs"
+          :reportConfig="reportConfig"
           @go-back="handleGoBack"
           @next-step="handleNextStep"
           @add-log="addLog"
@@ -99,6 +105,26 @@ const graphData = ref(null)
 const graphLoading = ref(false)
 const systemLogs = ref([])
 const currentStatus = ref('processing') // processing | completed | error
+const reportConfig = ref({
+  persona: '',
+  variables: {},
+  analysis_mode: 'global',
+  language: localStorage.getItem('agenikpredict-locale') || 'en'
+})
+
+// Theme
+const isDark = ref(false)
+const initTheme = () => {
+  const saved = localStorage.getItem('agenikpredict-theme')
+  isDark.value = saved ? saved === 'dark' : true
+  document.documentElement.classList.toggle('dark', isDark.value)
+}
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('agenikpredict-theme', isDark.value ? 'dark' : 'light')
+}
+initTheme()
 
 // --- Computed Layout Styles ---
 const leftPanelStyle = computed(() => {
@@ -137,6 +163,15 @@ const addLog = (msg) => {
 
 const updateStatus = (status) => {
   currentStatus.value = status
+}
+
+const updateReportConfig = (nextConfig = {}) => {
+  reportConfig.value = {
+    persona: nextConfig.persona || '',
+    variables: nextConfig.variables || {},
+    analysis_mode: nextConfig.analysis_mode || 'global',
+    language: nextConfig.language || localStorage.getItem('agenikpredict-locale') || 'en'
+  }
 }
 
 // --- Layout Methods ---
@@ -446,5 +481,27 @@ onUnmounted(() => {
 
 .panel-wrapper.left {
   border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.theme-toggle:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.theme-icon {
+  width: 16px;
+  height: 16px;
 }
 </style>

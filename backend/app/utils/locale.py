@@ -21,9 +21,42 @@ LOCALE_NAMES = {
 }
 
 
+def normalize_locale_code(locale_code: str | None) -> str:
+    """Normalize a locale/header value to a supported short locale code."""
+    if not locale_code:
+        return 'en'
+
+    raw = str(locale_code).strip().lower()
+    if not raw:
+        return 'en'
+
+    # Accept-Language can look like: "ru,en;q=0.9" or "en-US"
+    primary = raw.split(',')[0].split(';')[0].strip()
+    short = primary.split('-')[0].split('_')[0].strip()
+    return short if short in LOCALE_NAMES else 'en'
+
+
 def get_language_name(locale_code: str) -> str:
     """Get full language name from locale code, defaults to English."""
-    return LOCALE_NAMES.get(locale_code, 'English')
+    return LOCALE_NAMES.get(normalize_locale_code(locale_code), 'English')
+
+
+def resolve_request_language(
+    header_language: str | None = None,
+    payload: dict | None = None,
+    *,
+    default: str = 'en',
+) -> str:
+    """
+    Resolve the effective language for a request.
+
+    JSON/form payload language explicitly overrides Accept-Language when present.
+    """
+    if payload and hasattr(payload, 'get'):
+        explicit = payload.get('language')
+        if explicit:
+            return normalize_locale_code(explicit)
+    return normalize_locale_code(header_language or default)
 
 
 def get_llm_language_instruction(locale_code: str) -> str:
@@ -33,6 +66,7 @@ def get_llm_language_instruction(locale_code: str) -> str:
     Returns empty string for English (the default LLM language),
     so existing behavior is unchanged when no locale is set.
     """
+    locale_code = normalize_locale_code(locale_code)
     if not locale_code or locale_code == 'en':
         return ''
     name = get_language_name(locale_code)
