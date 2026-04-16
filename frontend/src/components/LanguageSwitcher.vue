@@ -1,6 +1,6 @@
 <template>
   <div class="lang-switcher" ref="switcher">
-    <button ref="btnRef" class="lang-btn" @click="toggleDropdown">
+    <button ref="btnRef" class="lang-btn" @click="toggleDropdown" aria-label="Select language" :aria-expanded="isOpen">
       <svg class="lang-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
       <span class="lang-label">{{ currentLabel }}</span>
       <svg class="lang-chevron" :class="{ open: isOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
