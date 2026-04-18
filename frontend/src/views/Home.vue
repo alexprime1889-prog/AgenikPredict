@@ -42,7 +42,7 @@
             <div v-for="(file, index) in files" :key="`${file.name}-${index}`" class="file-chip">
               <span class="file-badge">{{ getFileTypeBadge(file.name) }}</span>
               <span class="file-name">{{ file.name }}</span>
-              <button class="file-remove" @click.stop="removeFile(index)">×</button>
+              <button class="file-remove" aria-label="Remove file" @click.stop="removeFile(index)">×</button>
             </div>
           </div>
         </div>
@@ -65,14 +65,14 @@
         <div class="url-row">
           <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           <input v-model="urlInput" type="url" class="url-input" placeholder="Paste URL or YouTube link" :disabled="loading" @keydown.enter.prevent="addUrl" />
-          <button class="url-add" @click="addUrl" :disabled="!urlInput.trim() || loading">+</button>
+          <button class="url-add" aria-label="Add URL" @click="addUrl" :disabled="!urlInput.trim() || loading">+</button>
         </div>
 
         <div v-if="urls.length > 0" class="url-chips">
           <div v-for="(url, index) in urls" :key="url" class="file-chip">
             <span class="file-badge">{{ isYouTubeUrl(url) ? 'YT' : 'URL' }}</span>
             <span class="file-name">{{ url }}</span>
-            <button class="file-remove" @click.stop="removeUrl(index)">×</button>
+            <button class="file-remove" aria-label="Remove URL" @click.stop="removeUrl(index)">×</button>
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@
         </div>
         <div class="prompt-input-row">
           <textarea v-model="formData.simulationRequirement" class="prompt-textarea" :placeholder="$t('home.promptPlaceholder')" rows="1" :disabled="loading" @input="autoResize" ref="promptRef"></textarea>
-          <button class="start-btn" :disabled="!canSubmit || loading" @click="startSimulation">
+          <button class="start-btn" aria-label="Start Simulation" :disabled="!canSubmit || loading" @click="startSimulation">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="start-icon"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
         </div>
