@@ -34,7 +34,7 @@
                   <span class="detail-type-badge">{{ selectedOntologyItem.itemType === 'entity' ? $t('step1.entityLabel') : $t('step1.relationLabel') }}</span>
                   <span class="detail-name">{{ selectedOntologyItem.name }}</span>
                </div>
-               <button class="close-btn" @click="selectedOntologyItem = null">×</button>
+               <button class="close-btn" @click="selectedOntologyItem = null" :aria-label="$t('common.close')">×</button>
             </div>
             <div class="detail-body">
                <div class="detail-desc">{{ selectedOntologyItem.description }}</div>

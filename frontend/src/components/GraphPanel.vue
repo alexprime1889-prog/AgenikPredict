@@ -54,7 +54,7 @@
           <span v-if="selectedItem.type === 'node'" class="detail-type-badge" :style="{ background: selectedItem.color, color: '#fff' }">
             {{ selectedItem.entityType }}
           </span>
-          <button class="detail-close" @click="closeDetailPanel">×</button>
+          <button class="detail-close" @click="closeDetailPanel" :aria-label="$t('common.close')">×</button>
         </div>
 
         <!-- Node details -->
@@ -236,7 +236,7 @@
               <div v-for="(v, idx) in reportConfig.variables" :key="idx" class="variable-row">
                 <input v-model="v.key" @blur="emitReportConfig" class="var-input var-key" placeholder="Key" />
                 <input v-model="v.value" @blur="emitReportConfig" class="var-input var-value" placeholder="Value" />
-                <button class="var-remove-btn" @click="removeVariable(idx)">\u00D7</button>
+                <button class="var-remove-btn" @click="removeVariable(idx)" :aria-label="$t('common.close')">\u00D7</button>
               </div>
             </div>
           </div>
